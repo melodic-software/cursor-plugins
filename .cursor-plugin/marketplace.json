@@ -1,0 +1,21 @@
+{
+  "name": "melodic-software-cursor",
+  "owner": {
+    "name": "Melodic Software",
+    "email": "info@melodicsoftware.com"
+  },
+  "metadata": {
+    "description": "Melodic Software Cursor plugin marketplace — Cursor-native skills, agents, rules, hooks, and MCP servers.",
+    "version": "0.1.0",
+    "pluginRoot": "plugins"
+  },
+  "plugins": [
+    {
+      "name": "hello",
+      "source": "hello",
+      "description": "Bootstrap canary plugin that proves marketplace layout and discovery.",
+      "category": "development",
+      "tags": ["bootstrap", "canary"]
+    }
+  ]
+}
