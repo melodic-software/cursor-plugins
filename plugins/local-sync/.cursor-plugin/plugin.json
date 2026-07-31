@@ -1,0 +1,11 @@
+{
+  "name": "local-sync",
+  "version": "0.1.0",
+  "description": "Sync Melodic Cursor marketplace plugins into ~/.cursor/plugins/local with real directory copies (no junctions).",
+  "author": {
+    "name": "Melodic Software",
+    "email": "info@melodicsoftware.com"
+  },
+  "license": "MIT",
+  "keywords": ["sync", "local", "marketplace", "bootstrap"]
+}

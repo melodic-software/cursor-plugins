@@ -19,18 +19,28 @@ docs/MIGRATION-PLAYBOOK.md        # Claude → Cursor migrate/adapt process
 docs/OFFICIAL-DOCS.md             # Cursor official doc jump sheet
 ```
 
-## Local install (personal)
+## Local install / update (personal)
 
-Ultra / personal plans do not get Team Marketplace GitHub import. To try a
-plugin locally:
+Personal `/add-plugin` GitHub marketplaces often stick on a stale commit. The
+reliable personal path is real copies under `~/.cursor/plugins/local/`
+(junctions whose target is outside `local` are rejected).
 
-1. Copy `plugins/<name>/` to `%USERPROFILE%\.cursor\plugins\local\<name>\`
-   (real directory copy — junctions whose target is outside `local` are rejected).
-2. **Developer: Reload Window**.
-3. Confirm the plugin appears under Cursor Plugins.
+From this repo (recommended):
 
-Team Marketplace import (when available on your plan): add this GitHub repo as a
-marketplace per [Cursor plugins docs](https://cursor.com/docs/plugins).
+```powershell
+pwsh -File scripts/sync-local.ps1
+```
+
+```bash
+bash scripts/sync-local.sh
+```
+
+Then **Developer: Reload Window**. After `local-sync` is installed once, you can
+also run **`/sync-local`** in Cursor.
+
+Optional: `/add-plugin https://github.com/melodic-software/cursor-plugins` for a
+personal marketplace catalog (updates are flaky today). Team Marketplace Auto
+Refresh is documented for org admins under Dashboard → Plugins.
 
 ## Contributing
 
