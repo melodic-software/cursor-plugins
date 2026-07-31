@@ -1,0 +1,11 @@
+{
+  "name": "hello",
+  "version": "0.1.0",
+  "description": "Bootstrap canary plugin that proves marketplace layout and discovery for melodic-software/cursor-plugins.",
+  "author": {
+    "name": "Melodic Software",
+    "email": "info@melodicsoftware.com"
+  },
+  "license": "MIT",
+  "keywords": ["bootstrap", "canary", "cursor"]
+}
