@@ -16,6 +16,13 @@
       "description": "Bootstrap canary plugin that proves marketplace layout and discovery.",
       "category": "development",
       "tags": ["bootstrap", "canary"]
+    },
+    {
+      "name": "local-sync",
+      "source": "local-sync",
+      "description": "Sync marketplace plugins into ~/.cursor/plugins/local with real directory copies.",
+      "category": "development",
+      "tags": ["sync", "local", "bootstrap"]
     }
   ]
 }
