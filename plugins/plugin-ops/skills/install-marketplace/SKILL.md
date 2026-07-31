@@ -14,6 +14,7 @@ Before any recommendation, fetch and skim:
 3. https://cursor.com/docs/integrations/github — only if Team Auto Refresh / GitHub App comes up
 
 Use `plugins/plugin-ops/reference/DOC-SOURCES.md`. **Docs win** over this skill.
+Melodic policy: `docs/PLUGIN-PHILOSOPHY.md`.
 
 ## Clarify
 

@@ -1,0 +1,108 @@
+# Plugin philosophy (Cursor)
+
+Durable design policy for plugins in this marketplace. The
+[migration playbook](MIGRATION-PLAYBOOK.md) applies it when porting from
+[`claude-code-plugins`](https://github.com/melodic-software/claude-code-plugins).
+Official URL pointers live in [OFFICIAL-DOCS.md](OFFICIAL-DOCS.md) — **fetch live;
+never treat this file as a procedure cache.**
+
+## Design boundary
+
+A plugin is a reusable, independently useful vertical slice of one cohesive
+capability. It must work outside the repository and organization that produced
+it. Publisher metadata may identify its source; runtime behavior must not depend
+on publisher names, organization-specific environment variables, repository
+names, absolute machine paths, or an undocumented consumer layout.
+
+Keep plugins horizontally decoupled:
+
+- A plugin owns its skills, rules, agents, hooks, MCP config, scripts, and state.
+- It never imports files from a sibling plugin or discovers another plugin's
+  install directory.
+- Cooperation uses a documented public seam (explicit invocation, documented
+  artifact contract, or presence-gated optional collaboration with a fallback).
+- Every plugin remains useful alone.
+
+This repo is the **Cursor-only** SSOT. Do not dual-read Claude manifests at
+runtime. Do not auto-export Cursor artifacts into `claude-code-plugins`.
+
+## Mandatory live-doc fetch
+
+Before advising on install, update, marketplace layout, component format, or
+changing a stance row below:
+
+1. Fetch the relevant pages from [OFFICIAL-DOCS.md](OFFICIAL-DOCS.md) /
+   [`plugins/plugin-ops/reference/DOC-SOURCES.md`](../plugins/plugin-ops/reference/DOC-SOURCES.md).
+2. Prefer the fetched page over this file, training data, or prior chat memory.
+3. If a fetch diverges from a stance row, update the row and its verified date.
+
+`plugin-ops` skills encode this gate operationally.
+
+## Claude Code vs Cursor (do not confuse hosts)
+
+| Topic | Claude Code | Cursor (this marketplace) |
+| --- | --- | --- |
+| Skills | Primary; Agent Skills standard | Primary; Agent Skills standard |
+| `commands/` | Merged into skills; use `skills/` for new plugins (legacy flat files still load) | Still a **documented** plugin component in the plugins reference; Melodic **discourages** new `commands/` and ships skills instead |
+| Slash UX | Skill or legacy command → `/name` | Skills appear in `/`; optional `disable-model-invocation: true` for explicit-only |
+| Migration helper | Host docs | Built-in `/migrate-to-skills` for user/workspace rules and slash commands |
+| Config scalars | Manifest `userConfig` | Plugin `variables` + dashboard **Plugins → Configure** |
+| Hooks / MCP | Claude contracts | Cursor contracts — reshape; never assume Claude plugin hooks auto-run |
+
+Claude fleet policy that **prohibits** `commands/` is **not** Cursor law. Copy
+ideas, not host-specific prohibitions, unless a live Cursor fetch says the same.
+
+## Component stances
+
+> **Staleness disclaimer.** The platform changes constantly. Every row carries
+> the date its facts were verified against the linked official page. Always
+> re-fetch before acting on a row.
+
+| Component | Stance | Rationale and constraints | Verified |
+| --- | --- | --- | --- |
+| [Skills](https://cursor.com/docs/skills) | **Primary surface** | Default unit of capability. Folder `skills/<name>/SKILL.md` (+ optional `scripts/`, `references/`, `assets/`). Use `paths` / `disable-model-invocation` per live skills docs. | 2026-07-31 |
+| [`commands/`](https://cursor.com/docs/reference/plugins) | **Discouraged** | Cursor still discovers command markdown under `commands/`. Melodic policy: do not add new command files; put the procedure in a skill. Thin slash stubs that only say “follow the skill” are prohibited. Exception requires a one-line README note + philosophy re-fetch that still needs a separate command. | 2026-07-31 |
+| [Rules](https://cursor.com/docs/rules) | Adopt on need | Short persistent guidance (`.mdc`). Prefer skills for multi-step procedures. | 2026-07-31 |
+| [Agents](https://cursor.com/docs/reference/plugins) | Adopt on need | Custom agent markdown under `agents/` when a distinct agent role is load-bearing. | 2026-07-31 |
+| [Hooks](https://cursor.com/docs/hooks) | Adopt on need | Cursor event model ≠ Claude. See also [third-party / Claude Code hooks](https://cursor.com/docs/reference/third-party-hooks). | 2026-07-31 |
+| [MCP](https://cursor.com/docs/mcp) | Adopt on need | `mcp.json` + `variables` for secrets (dashboard Configure). Clears trust review in the migration playbook. | 2026-07-31 |
+| Claude-only surfaces (workflows, channels, LSP plugin slots, Claude `userConfig`, Claude settings `agent`, etc.) | **Drop or map** | No silent port. Map only when a Cursor-native equivalent exists after a live-doc check; otherwise leave in Claude SSOT. | 2026-07-31 |
+
+## Decision matrix: rules vs skills vs commands
+
+| Need | Prefer | Avoid |
+| --- | --- | --- |
+| Short always-on or file-scoped coding constraint | **Rule** (`.mdc`, `alwaysApply` / `globs` / description) | Long procedure dumped into a rule |
+| Multi-step workflow, checklists, scripts, progressive refs | **Skill** | Duplicating the same text as a rule and a skill |
+| Explicit-only slash invoke (no auto agent pick-up) | **Skill** with `disable-model-invocation: true` | New `commands/` file |
+| Thin “run the skill” slash alias | **Nothing extra** — skill already registers `/name` | `commands/<name>.md` stub |
+
+Pointers (fetch live): [Skills](https://cursor.com/docs/skills),
+[Rules](https://cursor.com/docs/rules),
+[Plugins reference](https://cursor.com/docs/reference/plugins),
+[Plugins overview](https://cursor.com/docs/plugins).
+
+## Configuration ownership
+
+| Concern | Owner and mechanism |
+| --- | --- |
+| Invocation-specific choice | Explicit skill argument / chat clarification |
+| Personal or admin scalar / secret | Plugin manifest `variables` → dashboard **Plugins → Configure** (`${VAR}` in `mcp.json`) |
+| Tracked repo convention | Documented consumer-project file or rule |
+| Bundled plugin assets | Paths relative to the plugin root (no absolute machine paths) |
+
+Never commit secret values into the plugin tree.
+
+## Native-first
+
+Prefer Cursor-native mechanisms (skills, rules, hooks, MCP, Team Marketplace,
+local `~/.cursor/plugins/local`) over custom distribution hacks. Adopt a native
+surface only when it fills a real gap, is stable enough for fleet use after a
+live-doc check, and meets Melodic standards. Retire custom channels when a
+native one matures.
+
+## Related
+
+- [MIGRATION-PLAYBOOK.md](MIGRATION-PLAYBOOK.md) — port gates and acceptance
+- [OFFICIAL-DOCS.md](OFFICIAL-DOCS.md) — URL jump sheet
+- [`plugin-ops`](../plugins/plugin-ops/README.md) — install / update / sync / verify skills

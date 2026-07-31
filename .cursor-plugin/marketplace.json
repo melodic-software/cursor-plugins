@@ -11,13 +11,6 @@
   },
   "plugins": [
     {
-      "name": "hello",
-      "source": "hello",
-      "description": "Bootstrap canary plugin that proves marketplace layout and discovery.",
-      "category": "development",
-      "tags": ["bootstrap", "canary"]
-    },
-    {
       "name": "plugin-ops",
       "source": "plugin-ops",
       "description": "Plan-aware install/update/sync/verify for Cursor plugins and marketplaces; fetches official docs live.",
