@@ -11,6 +11,7 @@ description: Sync any Cursor plugin or marketplace (local path or git URL) into 
 2. Fetch https://cursor.com/docs/reference/plugins — marketplace vs single-plugin layout.
 3. Follow `plugins/plugin-ops/reference/DOC-SOURCES.md` for the full URL list.
 4. Prefer live docs over this skill if they disagree.
+5. Melodic policy: `docs/PLUGIN-PHILOSOPHY.md` (skills primary; no `commands/` layer for this workflow).
 
 ## When to use
 

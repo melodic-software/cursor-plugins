@@ -12,6 +12,7 @@ description: Update installed Cursor plugins/marketplaces for the user's plan. F
 3. https://cursor.com/docs/reference/plugins — only if validating marketplace layout after a pull
 
 `plugins/plugin-ops/reference/DOC-SOURCES.md` lists URLs. **Docs win.**
+Melodic policy: `docs/PLUGIN-PHILOSOPHY.md`.
 
 ## Clarify how they installed
 
