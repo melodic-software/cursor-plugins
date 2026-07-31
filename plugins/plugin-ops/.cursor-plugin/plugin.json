@@ -1,0 +1,19 @@
+{
+  "name": "plugin-ops",
+  "version": "0.2.0",
+  "description": "Plan-aware Cursor plugin/marketplace install, update, local sync, and verify — always fetch official Cursor docs live.",
+  "author": {
+    "name": "Melodic Software",
+    "email": "info@melodicsoftware.com"
+  },
+  "license": "MIT",
+  "keywords": [
+    "plugins",
+    "marketplace",
+    "sync",
+    "local",
+    "enterprise",
+    "teams",
+    "ultra"
+  ]
+}

@@ -15,39 +15,46 @@ runtime behavior here are Cursor-only.
 plugins/<name>/
   .cursor-plugin/plugin.json      # per-plugin manifest
   skills/ | agents/ | rules/ | commands/ | hooks/ | mcp.json
-docs/MIGRATION-PLAYBOOK.md        # Claude → Cursor migrate/adapt process
-docs/OFFICIAL-DOCS.md             # Cursor official doc jump sheet
+scripts/sync-local.*              # sync any path/URL into ~/.cursor/plugins/local
+docs/MIGRATION-PLAYBOOK.md
+docs/OFFICIAL-DOCS.md             # jump sheet; plugin-ops fetches docs live
 ```
 
-## Local install / update (personal)
+## Install / update (all plans)
 
-Personal `/add-plugin` GitHub marketplaces often stick on a stale commit. The
-reliable personal path is real copies under `~/.cursor/plugins/local/`
-(junctions whose target is outside `local` are rejected).
+Use **`plugin-ops`** (skills/commands fetch [Cursor docs](https://cursor.com/docs/plugins) live):
 
-From this repo (recommended):
+| Goal | Command |
+| --- | --- |
+| Add a marketplace the right way for your plan | `/install-marketplace` |
+| Update after upstream changes | `/update-plugins` |
+| Force disk copies (path or git URL) | `/sync-local` |
+
+Script (works for **any** marketplace or single-plugin repo, not only Melodic):
 
 ```powershell
-pwsh -File scripts/sync-local.ps1
+pwsh -File scripts/sync-local.ps1 -Source https://github.com/org/repo
+pwsh -File scripts/sync-local.ps1 -Source . -Plugin hello,plugin-ops
 ```
 
 ```bash
-bash scripts/sync-local.sh
+bash scripts/sync-local.sh https://github.com/org/repo
+bash scripts/sync-local.sh . hello plugin-ops
 ```
 
-Then **Developer: Reload Window**. After `local-sync` is installed once, you can
-also run **`/sync-local`** in Cursor.
+Then **Developer: Reload Window**.
 
-Optional: `/add-plugin https://github.com/melodic-software/cursor-plugins` for a
-personal marketplace catalog (updates are flaky today). Team Marketplace Auto
-Refresh is documented for org admins under Dashboard → Plugins.
+Plan cheat-sheet (always re-check live docs):
+
+- **Personal / Ultra:** `/add-plugin <url>` and/or `sync-local`
+- **Teams/Enterprise admin:** Dashboard → Plugins → Team Marketplaces (Auto Refresh optional)
+- **Org member:** install from Customize after admin import
 
 ## Contributing
 
-1. Follow [docs/OFFICIAL-DOCS.md](docs/OFFICIAL-DOCS.md) for manifest shapes.
-2. Port work from the Claude catalog via
-   [docs/MIGRATION-PLAYBOOK.md](docs/MIGRATION-PLAYBOOK.md).
-3. Open a PR against `main` (org ruleset requires pull requests).
+1. Prefer live docs via [docs/OFFICIAL-DOCS.md](docs/OFFICIAL-DOCS.md) / `plugin-ops`.
+2. Port Claude ideas via [docs/MIGRATION-PLAYBOOK.md](docs/MIGRATION-PLAYBOOK.md).
+3. Open a PR against `main`.
 
 ## Governance
 

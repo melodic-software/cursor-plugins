@@ -6,7 +6,7 @@
   },
   "metadata": {
     "description": "Melodic Software Cursor plugin marketplace — Cursor-native skills, agents, rules, hooks, and MCP servers.",
-    "version": "0.1.0",
+    "version": "0.2.0",
     "pluginRoot": "plugins"
   },
   "plugins": [
@@ -18,11 +18,11 @@
       "tags": ["bootstrap", "canary"]
     },
     {
-      "name": "local-sync",
-      "source": "local-sync",
-      "description": "Sync marketplace plugins into ~/.cursor/plugins/local with real directory copies.",
+      "name": "plugin-ops",
+      "source": "plugin-ops",
+      "description": "Plan-aware install/update/sync/verify for Cursor plugins and marketplaces; fetches official docs live.",
       "category": "development",
-      "tags": ["sync", "local", "bootstrap"]
+      "tags": ["sync", "local", "marketplace", "enterprise", "teams", "ultra"]
     }
   ]
 }
