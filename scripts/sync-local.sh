@@ -155,7 +155,7 @@ echo "Source: $work_root"
 echo "Local:  $local_root"
 echo "Synced (${#synced[@]}): $(IFS=,; echo "${synced[*]}")"
 if [[ "${#skipped[@]}" -gt 0 ]]; then
-  echo "Skipped (${#skipped[@]}): $(IFS='; echo "${skipped[*]}")"
+  echo "Skipped (${#skipped[@]}): $(IFS='; '; echo "${skipped[*]}")"
 fi
 if [[ "$keep_clone" -eq 1 && -n "$temp_clone" ]]; then
   echo "Kept clone: $temp_clone"
