@@ -35,8 +35,3 @@ and the `scripts/sync-local.*` sync tooling. See `README.md` and
 - The PowerShell twin `scripts/sync-local.ps1` requires `pwsh` (PowerShell), which is
   **not** installed in the base image. On Linux use the `.sh` variant; only the `.ps1`
   path needs PowerShell.
-- Known defect: `scripts/sync-local.sh` line 158 has an unterminated single quote
-  (`IFS='` in the "Skipped" summary; it should be `IFS='; '`). The plugin copy completes
-  successfully, but bash then fails to parse the trailing `if` block, skips the final
-  summary lines, and the script exits non-zero (code 2). Do not treat a non-zero exit as
-  a copy failure until this is fixed.
