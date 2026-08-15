@@ -48,4 +48,12 @@ for id in "${wanted[@]:-}"; do
 		echo "install-plugins: install failed: $id" >&2
 	fi
 done
-echo "install-plugins: ${#wanted[@]} enabled, $installed newly installed"
+if ((installed > 0)); then
+	# Claude Code builds its plugin registry before SessionStart hooks run, so
+	# anything installed above is on disk but not yet loaded in this session.
+	echo "install-plugins: ${#wanted[@]} enabled, $installed newly installed." \
+		"They are NOT active in this session yet — run /reload-plugins to load them now," \
+		"or they load on the next session start."
+else
+	echo "install-plugins: ${#wanted[@]} enabled, all already installed"
+fi
