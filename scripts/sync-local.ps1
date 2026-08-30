@@ -4,7 +4,7 @@
   Copy Cursor plugin(s) into ~/.cursor/plugins/local (real copies).
 
 .DESCRIPTION
-  Works for any Cursor plugin or marketplace checkout — not only this repo.
+  Works for any Cursor plugin or marketplace checkout - not only this repo.
   Accepts a local path or GitHub URL. Detects:
     - multi-plugin marketplace (.cursor-plugin/marketplace.json)
     - single plugin (.cursor-plugin/plugin.json at root or under pluginRoot)
@@ -91,7 +91,7 @@ function Resolve-PluginDirs {
     $name = (Get-Content $rootPlugin -Raw | ConvertFrom-Json).name
     if (-not $name) { $name = Split-Path $Root -Leaf }
     if ($Only -and $Only.Count -gt 0 -and ($Only -notcontains $name)) {
-      return @()
+      throw "Plugin filter excluded single plugin '$name'"
     }
     $dirs += [pscustomobject]@{ Name = $name; Path = $Root }
   } else {
@@ -118,14 +118,16 @@ function Copy-PluginReal {
     [Parameter(Mandatory)][string] $Dst,
     [switch] $DryRun
   )
-  if ($DryRun) {
-    Write-Host "[dry-run] would sync -> $Dst"
-    return
-  }
+  # The caller prints the per-plugin line (bash prints exactly one); print nothing here.
+  if ($DryRun) { return }
   if (Test-Path $Dst) {
     $item = Get-Item $Dst -Force
     if ($item.Attributes -band [IO.FileAttributes]::ReparsePoint) {
-      cmd /c "rmdir `"$Dst`"" | Out-Null
+      # Drop the link, never its target. Directory.Delete "does not recurse through
+      # the reparse point", which is what `rmdir` gave us -- but on every platform.
+      # (`cmd` does not exist on Linux/macOS, where .NET also reports a symlinked
+      # directory as Directory, ReparsePoint.)
+      [IO.Directory]::Delete($Dst, $false)
     } else {
       Remove-Item $Dst -Recurse -Force
     }
@@ -170,19 +172,23 @@ try {
   $skipped = @()
 
   foreach ($entry in $pluginDirs) {
+    # Name comes from untrusted marketplace.json/plugin.json and is joined onto
+    # $localRoot before Remove-Item. Keep it a single path segment so the
+    # destination cannot escape the plugins root.
+    if ([string]::IsNullOrWhiteSpace($entry.Name) -or
+        $entry.Name -match '[\\/]' -or $entry.Name -eq '.' -or $entry.Name -eq '..') {
+      $skipped += "$($entry.Name) (invalid plugin name)"
+      continue
+    }
     $manifest = Join-Path $entry.Path ".cursor-plugin\plugin.json"
     if (-not (Test-Path $manifest)) {
-      # single-plugin repo already checked root; marketplace entry missing on disk
-      $alt = Join-Path $entry.Path ".cursor-plugin/plugin.json"
-      if (-not (Test-Path $alt)) {
-        $skipped += "$($entry.Name) (missing .cursor-plugin/plugin.json)"
-        continue
-      }
+      $skipped += "$($entry.Name) (missing .cursor-plugin/plugin.json)"
+      continue
     }
     $dst = Join-Path $localRoot $entry.Name
     Copy-PluginReal -Src $entry.Path -Dst $dst -DryRun:$DryRun
-    if (-not $DryRun) { Write-Host "synced $($entry.Name) -> $dst" }
-    else { Write-Host "[dry-run] $($entry.Name) -> $dst" }
+    $label = if ($DryRun) { "[dry-run]" } else { "synced" }
+    Write-Host "$label $($entry.Name) -> $dst"
     $synced += $entry.Name
   }
 

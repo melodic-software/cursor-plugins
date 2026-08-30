@@ -17,7 +17,11 @@ while [[ $# -gt 0 ]]; do
     --dry-run) dry_run=1; shift ;;
     --keep-clone) keep_clone=1; shift ;;
     --ref)
-      ref="${2:-}"
+      if [[ $# -lt 2 ]]; then
+        echo "Missing value for --ref" >&2
+        exit 2
+      fi
+      ref="$2"
       shift 2
       ;;
     -*)
@@ -38,7 +42,6 @@ done
 [[ -n "$source" ]] || source="$repo_default"
 
 local_root="${HOME}/.cursor/plugins/local"
-mkdir -p "$local_root"
 
 is_git_url() {
   [[ "$1" =~ ^(https://|git@|ssh://) ]] || [[ "$1" == *.git ]]
@@ -62,8 +65,14 @@ if is_git_url "$source"; then
   fi
   work_root="$temp_clone"
 else
+  if [[ ! -d "$source" ]]; then
+    echo "Source path not found: $source" >&2
+    exit 1
+  fi
   work_root="$(cd "$source" && pwd)"
 fi
+
+mkdir -p "$local_root"
 
 marketplace="$work_root/.cursor-plugin/marketplace.json"
 root_plugin="$work_root/.cursor-plugin/plugin.json"
@@ -84,7 +93,10 @@ if [[ -f "$marketplace" ]]; then
   if [[ "${#plugins[@]}" -gt 0 ]]; then
     sel=("${plugins[@]}")
   else
-    mapfile -t sel < <(python3 -c 'import json,sys; m=json.load(open(sys.argv[1])); print("\n".join(p["name"] for p in m.get("plugins",[])))' "$marketplace")
+    sel=()
+    while IFS= read -r line; do
+      if [[ -n "$line" ]]; then sel+=("$line"); fi
+    done < <(python3 -c 'import json,sys; m=json.load(open(sys.argv[1])); print("\n".join(p["name"] for p in m.get("plugins",[])))' "$marketplace")
   fi
   for name in "${sel[@]}"; do
     rel="$(python3 -c 'import json,sys
@@ -119,13 +131,23 @@ elif [[ -d "$work_root/plugins" ]]; then
   if [[ "${#plugins[@]}" -gt 0 ]]; then
     sel=("${plugins[@]}")
   else
-    mapfile -t sel < <(find "$work_root/plugins" -mindepth 1 -maxdepth 1 -type d -printf '%f\n' | sort)
+    # Glob rather than `find -printf`: -printf/-mindepth/-maxdepth are GNU
+    # extensions (absent from POSIX and BSD find). Pathname expansion is already
+    # sorted, so this also replaces the `| sort`.
+    sel=()
+    for dir in "$work_root"/plugins/*/; do
+      if [[ -d "$dir" ]]; then sel+=("$(basename "$dir")"); fi
+    done
   fi
   for name in "${sel[@]}"; do
     names+=("$name")
     paths+=("$work_root/plugins/$name")
   done
-else
+fi
+
+# Covers both "no recognised layout" and "layout found but it named no plugins"
+# (e.g. an empty plugins/ dir, or "plugins": [] in marketplace.json).
+if [[ "${#names[@]}" -eq 0 ]]; then
   echo "No Cursor plugins found under $work_root" >&2
   exit 1
 fi
@@ -135,6 +157,13 @@ skipped=()
 for i in "${!names[@]}"; do
   name="${names[$i]}"
   src="${paths[$i]}"
+  # `name` comes from untrusted marketplace.json/plugin.json and is joined onto
+  # $local_root before `rm -rf`. Keep it a single path segment so the destination
+  # cannot escape the plugins root.
+  if [[ -z "$name" || "$name" == "." || "$name" == ".." || "$name" == */* || "$name" == *\\* ]]; then
+    skipped+=("$name (invalid plugin name)")
+    continue
+  fi
   if [[ ! -f "$src/.cursor-plugin/plugin.json" ]]; then
     skipped+=("$name (missing .cursor-plugin/plugin.json)")
     continue
@@ -153,9 +182,13 @@ done
 echo
 echo "Source: $work_root"
 echo "Local:  $local_root"
-echo "Synced (${#synced[@]}): $(IFS=,; echo "${synced[*]}")"
+# "${arr[*]}" can only join on the FIRST character of IFS (bash(1), Arrays), so a
+# two-character separator needs printf + trailing-separator trim.
+synced_list="$(printf '%s, ' "${synced[@]}")"
+echo "Synced (${#synced[@]}): ${synced_list%, }"
 if [[ "${#skipped[@]}" -gt 0 ]]; then
-  echo "Skipped (${#skipped[@]}): $(IFS='; '; echo "${skipped[*]}")"
+  skipped_list="$(printf '%s; ' "${skipped[@]}")"
+  echo "Skipped (${#skipped[@]}): ${skipped_list%; }"
 fi
 if [[ "$keep_clone" -eq 1 && -n "$temp_clone" ]]; then
   echo "Kept clone: $temp_clone"
