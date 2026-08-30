@@ -2,6 +2,9 @@
 # Copy Cursor plugin(s) into ~/.cursor/plugins/local (real copies).
 # Usage:
 #   scripts/sync-local.sh [--dry-run] [--ref REF] [--keep-clone] [source] [plugin-name ...]
+# Flags are position-independent: the parser accepts them before, between or after
+# the positional arguments. The first non-flag argument is the source; every later
+# non-flag argument is a plugin name.
 # source: local path or git URL (default: this repo).
 set -euo pipefail
 
@@ -25,6 +28,10 @@ while [[ $# -gt 0 ]]; do
       shift 2
       ;;
     -*)
+      # Exit 2 here, but the pwsh twin exits 1 for an unknown flag. That code is
+      # emitted by PowerShell's own parameter binder before the script body runs
+      # and cannot be overridden from the script, so the divergence is intentional
+      # and settled -- do not "fix" it.
       echo "Unknown flag: $1" >&2
       exit 2
       ;;
@@ -44,13 +51,58 @@ done
 local_root="${HOME}/.cursor/plugins/local"
 
 is_git_url() {
-  [[ "$1" =~ ^(https://|git@|ssh://) ]] || [[ "$1" == *.git ]]
+  # Matched case-insensitively: URI schemes are case-insensitive (RFC 3986 3.1),
+  # so "HTTPS://host/repo" is a URL, not a local path. `[[ =~ ]]` and `==` are
+  # case-sensitive, so fold the value first rather than relying on the caller.
+  # (The pwsh twin's -match/-like are case-insensitive by default; this keeps the
+  # two in step.) Folded with tr, not bash 4's ${x,,}, to stay usable under 3.2.
+  local value
+  value="$(printf '%s' "$1" | tr '[:upper:]' '[:lower:]')"
+  [[ "$value" =~ ^(https://|git@|ssh://) ]] || [[ "$value" == *.git ]]
+}
+
+# Resolve a path to an absolute, lexically normalised form: "." and ".." segments
+# are collapsed and a leading "" is anchored to $PWD. Deliberately does NOT follow
+# symlinks, for two reasons: `realpath -m` (resolve a not-yet-existing path) is a
+# GNU extension that BSD/macOS realpath lacks, and the pwsh twin's counterpart
+# [IO.Path]::GetFullPath is itself purely lexical -- so both twins agree. Symlinks
+# are not the threat here: a symlinked plugin directory is a supported layout, and
+# planting one already requires write access to the source tree, whereas ".."
+# reaches files the *user* keeps outside it.
+resolve_path() {
+  local input="$1" out="" rest comp
+  [[ "$input" == /* ]] || input="$PWD/$input"
+  rest="$input"
+  while [[ -n "$rest" ]]; do
+    comp="${rest%%/*}"
+    if [[ "$comp" == "$rest" ]]; then rest=""; else rest="${rest#*/}"; fi
+    case "$comp" in
+      "" | .) ;;
+      ..) out="${out%/*}" ;;
+      *) out="$out/$comp" ;;
+    esac
+  done
+  printf '%s\n' "${out:-/}"
+}
+
+# True when $2 is $1 itself or lies under it. Both must already be absolute and
+# normalised (resolve_path), so this is a comparison of resolved paths rather than
+# a substring test on raw input.
+path_contains() {
+  [[ "$2" == "$1" || "$2" == "$1"/* ]]
 }
 
 temp_clone=""
 cleanup() {
-  if [[ -n "${temp_clone}" && -d "${temp_clone}" && "${keep_clone}" -eq 0 ]]; then
-    rm -rf "${temp_clone}"
+  if [[ -n "${temp_clone}" && -d "${temp_clone}" ]]; then
+    if [[ "${keep_clone}" -eq 1 ]]; then
+      # Printed from the exit handler, not from the main flow, so the path is
+      # still reported when the run fails part-way -- and so it lands after
+      # "Reload Cursor:", exactly where the pwsh twin's `finally` prints it.
+      echo "Kept clone: ${temp_clone}"
+    else
+      rm -rf "${temp_clone}"
+    fi
   fi
 }
 trap cleanup EXIT
@@ -79,24 +131,41 @@ root_plugin="$work_root/.cursor-plugin/plugin.json"
 
 names=()
 paths=()
+skipped=()
 
 if [[ -f "$marketplace" ]]; then
   if ! command -v python3 >/dev/null 2>&1; then
     echo "python3 required to parse marketplace.json" >&2
     exit 1
   fi
-  plugin_root="$work_root"
+  work_root_resolved="$(resolve_path "$work_root")"
+  plugin_root="$work_root_resolved"
   pr="$(python3 -c 'import json,sys; m=json.load(open(sys.argv[1])); print((m.get("metadata") or {}).get("pluginRoot") or "")' "$marketplace")"
   if [[ -n "$pr" ]]; then
-    plugin_root="$work_root/$pr"
+    plugin_root="$(resolve_path "$work_root_resolved/$pr")"
+    # metadata.pluginRoot is untrusted input too: "../.." here would move the base
+    # of every later join outside the source tree, so refuse it up front rather
+    # than skipping each plugin in turn.
+    if ! path_contains "$work_root_resolved" "$plugin_root"; then
+      echo "metadata.pluginRoot escapes the source repo: $pr" >&2
+      exit 1
+    fi
   fi
   if [[ "${#plugins[@]}" -gt 0 ]]; then
+    # The requested names are matched case-SENSITIVELY (Python's == below, and
+    # -ceq in the pwsh twin): the official schema constrains a plugin name to
+    # ^[a-z0-9]([a-z0-9.-]*[a-z0-9])?$, so exact matching is the schema-correct
+    # and stricter choice.
     sel=("${plugins[@]}")
   else
     sel=()
     while IFS= read -r line; do
       if [[ -n "$line" ]]; then sel+=("$line"); fi
-    done < <(python3 -c 'import json,sys; m=json.load(open(sys.argv[1])); print("\n".join(p["name"] for p in m.get("plugins",[])))' "$marketplace")
+    # .get("name"), not ["name"]: an entry with no "name" key made this raise a
+    # KeyError and print a raw Python traceback to stderr. It now yields an empty
+    # line, which the -n guard above drops -- the same treatment the pwsh twin
+    # gives a nameless entry.
+    done < <(python3 -c 'import json,sys; m=json.load(open(sys.argv[1])); print("\n".join(str(p.get("name") or "") for p in m.get("plugins",[])))' "$marketplace")
   fi
   for name in "${sel[@]}"; do
     rel="$(python3 -c 'import json,sys
@@ -109,15 +178,47 @@ for p in m.get("plugins", []):
 else:
   print(name)
 ' "$marketplace" "$name")"
+    # `rel` is untrusted marketplace.json content (plugins[].source, or
+    # plugins[].source.path). A value of "../../../etc" would make the read side
+    # copy files from outside the source repo into the user's plugins root -- the
+    # mirror image of the write-side name guard below, which was already closed.
+    # Resolve the join and require it to stay under $plugin_root.
+    src_resolved="$(resolve_path "$plugin_root/$rel")"
+    if ! path_contains "$plugin_root" "$src_resolved"; then
+      skipped+=("$name (source escapes plugin root)")
+      continue
+    fi
     names+=("$name")
-    paths+=("$plugin_root/$rel")
+    paths+=("$src_resolved")
   done
 elif [[ -f "$root_plugin" ]]; then
-  name="$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1])).get("name") or "")' "$root_plugin" 2>/dev/null || basename "$work_root")"
-  [[ -n "$name" ]] || name="$(basename "$work_root")"
+  # Two stacked fallbacks, kept because they cover different failure modes:
+  # python3 missing or plugin.json unparseable (non-zero exit), and python3 fine
+  # but "name" absent or empty (empty output). Both end at the *directory* name,
+  # which is a guess -- a manifest saying {"name":"good"} in a directory called
+  # "single" would otherwise sync silently as "single", with exit 0 and no hint
+  # that the name is wrong. So each fallback announces itself on stderr. The
+  # marketplace branch above hard-errors when python3 is absent; this branch stays
+  # usable without it (AGENTS.md scopes the python3 requirement to marketplace
+  # sources) but is no longer silent about the consequence.
+  name=""
+  if ! command -v python3 >/dev/null 2>&1; then
+    echo "Warning: python3 not found; cannot read \"name\" from $root_plugin" >&2
+  elif ! name="$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1])).get("name") or "")' "$root_plugin" 2>/dev/null)"; then
+    echo "Warning: could not parse $root_plugin" >&2
+    name=""
+  fi
+  if [[ -z "$name" ]]; then
+    name="$(basename "$work_root")"
+    echo "Warning: falling back to the directory name '$name', which may not be the plugin's declared name" >&2
+  fi
   if [[ "${#plugins[@]}" -gt 0 ]]; then
     match=0
     for p in "${plugins[@]}"; do
+      # Case-SENSITIVE on purpose, in both twins. The official manifest schema
+      # constrains a plugin name to ^[a-z0-9]([a-z0-9.-]*[a-z0-9])?$ -- already
+      # lowercase -- so an exact match is both the stricter reading and the
+      # schema-correct one, and "Foo" must not silently select "foo".
       if [[ "$p" == "$name" ]]; then match=1; fi
     done
     if [[ "$match" -ne 1 ]]; then
@@ -154,14 +255,15 @@ elif [[ -d "$work_root/plugins" ]]; then
 fi
 
 # Covers both "no recognised layout" and "layout found but it named no plugins"
-# (e.g. an empty plugins/ dir, or "plugins": [] in marketplace.json).
-if [[ "${#names[@]}" -eq 0 ]]; then
-  echo "No Cursor plugins found under $work_root" >&2
+# (e.g. an empty plugins/ dir, or "plugins": [] in marketplace.json). Entries that
+# were named but refused above are not "not found", so they fall through to the
+# Skipped report instead of being swallowed by this message.
+if [[ "${#names[@]}" -eq 0 && "${#skipped[@]}" -eq 0 ]]; then
+  echo "No Cursor plugins found under $work_root (need marketplace.json or plugin.json)." >&2
   exit 1
 fi
 
 synced=()
-skipped=()
 for i in "${!names[@]}"; do
   name="${names[$i]}"
   src="${paths[$i]}"
@@ -200,12 +302,16 @@ echo "Local:  $local_root"
 # "${arr[*]}" can only join on the FIRST character of IFS (bash(1), Arrays), so a
 # two-character separator needs printf + trailing-separator trim.
 synced_list="$(printf '%s, ' "${synced[@]}")"
-echo "Synced (${#synced[@]}): ${synced_list%, }"
+# A dry run copies nothing, so it must not report "Synced" -- that reads as work
+# done. The real-run line is unchanged.
+if [[ "$dry_run" -eq 1 ]]; then
+  echo "Would sync (${#synced[@]}): ${synced_list%, }"
+else
+  echo "Synced (${#synced[@]}): ${synced_list%, }"
+fi
 if [[ "${#skipped[@]}" -gt 0 ]]; then
   skipped_list="$(printf '%s; ' "${skipped[@]}")"
   echo "Skipped (${#skipped[@]}): ${skipped_list%; }"
 fi
-if [[ "$keep_clone" -eq 1 && -n "$temp_clone" ]]; then
-  echo "Kept clone: $temp_clone"
-fi
 echo "Reload Cursor: Developer: Reload Window"
+# "Kept clone:" is printed by the EXIT trap, after this line -- see cleanup().

@@ -12,6 +12,11 @@
   Cursor may reject junctions whose target is outside ~/.cursor/plugins/local,
   so this script always writes real directory copies.
 
+  An unrecognised switch exits 1, where the bash twin exits 2. That code is
+  emitted by PowerShell's own parameter binder before this script body runs and
+  cannot be overridden from the script, so the divergence is intentional and
+  settled - do not "fix" it.
+
 .PARAMETER Source
   Local path to a plugin or marketplace repo, or a git URL
   (https://github.com/org/repo[.git] or git@github.com:org/repo.git).
@@ -31,6 +36,12 @@
   Print actions without writing.
 #>
 [CmdletBinding()]
+[Diagnostics.CodeAnalysis.SuppressMessageAttribute(
+  'PSAvoidUsingWriteHost', '',
+  Justification = 'Every Write-Host here is script-scope output of a terminal-facing CLI: the console text IS the deliverable, and it is kept byte-identical to the bash twin scripts/sync-local.sh. Write-Output would emit these lines onto the pipeline, where a caller doing $x = ./sync-local.ps1 would capture the banner as data, and Write-Information is off by default so the user would see nothing.')]
+[Diagnostics.CodeAnalysis.SuppressMessageAttribute(
+  'PSUseSingularNouns', '',
+  Justification = 'Resolve-PluginDirs is a private helper inside a standalone script, not an exported cmdlet, and it genuinely returns a collection of plugin directories. A singular name would misdescribe its return value.')]
 param(
   [string] $Source = "",
   [string[]] $Plugin,
@@ -40,6 +51,9 @@ param(
 )
 
 $ErrorActionPreference = "Stop"
+# Mirrors the bash twin's `set -u`: an unset variable, a missing property or an
+# out-of-range index becomes a terminating error instead of a silent $null.
+Set-StrictMode -Version 3.0
 
 function Get-LocalPluginsRoot {
   if ($env:USERPROFILE) { return (Join-Path $env:USERPROFILE ".cursor\plugins\local") }
@@ -47,8 +61,51 @@ function Get-LocalPluginsRoot {
   throw "Neither USERPROFILE nor HOME is set"
 }
 
+function Get-JsonMember {
+  # Strict mode turns a reference to a missing property into a terminating error,
+  # but ConvertFrom-Json objects legitimately lack optional members (metadata,
+  # plugins, source, path, name). Ask the PSObject for the property instead, so
+  # "absent" stays a value rather than a throw. Also tolerates a $null input and a
+  # non-object input (a [string] source has no 'path' member, and must not throw).
+  param(
+    $InputObject,
+    [Parameter(Mandatory)][string] $Name
+  )
+  if ($null -eq $InputObject) { return $null }
+  $property = $InputObject.PSObject.Properties[$Name]
+  if ($null -eq $property) { return $null }
+  return $property.Value
+}
+
 function Test-IsGitUrl([string] $value) {
+  # -match is case-insensitive by default, which is what we want and what the bash
+  # twin now folds its input to achieve: URI schemes are case-insensitive
+  # (RFC 3986 3.1), so "HTTPS://host/repo" is a URL, not a local path.
   return $value -match '^(https://|git@|ssh://)' -or $value -match '\.git$'
+}
+
+function Get-NormalizedPath {
+  # Absolute, lexically normalised ("." and ".." collapsed). GetFullPath does not
+  # follow symlinks, matching the bash twin's resolve_path: symlinks are not the
+  # threat (a symlinked plugin directory is a supported layout, and planting one
+  # already requires write access to the source tree), whereas ".." reaches files
+  # the user keeps outside it. Returns $null for input GetFullPath rejects, e.g. a
+  # Windows-illegal join like "C:\repo\C:\Windows" - refused, not crashed.
+  param([Parameter(Mandatory)][string] $Path)
+  try { return [IO.Path]::GetFullPath($Path) } catch { return $null }
+}
+
+function Test-PathContained {
+  # True when $Candidate is $Base itself or lies under it. Both must already be
+  # absolute and normalised, so this compares resolved paths rather than raw input.
+  param(
+    [Parameter(Mandatory)][string] $Base,
+    [Parameter(Mandatory)][string] $Candidate
+  )
+  $sep = [IO.Path]::DirectorySeparatorChar
+  $trimmed = $Base.TrimEnd($sep)
+  return ($Candidate -ceq $trimmed) -or
+    $Candidate.StartsWith($trimmed + $sep, [StringComparison]::Ordinal)
 }
 
 function Resolve-PluginDirs {
@@ -63,37 +120,82 @@ function Resolve-PluginDirs {
 
   if (Test-Path $marketplace) {
     $json = Get-Content $marketplace -Raw | ConvertFrom-Json
-    $pluginRoot = $Root
-    if ($json.metadata -and $json.metadata.pluginRoot) {
-      $pluginRoot = Join-Path $Root ([string]$json.metadata.pluginRoot)
+    $entries = @(Get-JsonMember $json 'plugins')
+
+    $rootFull = Get-NormalizedPath $Root
+    if (-not $rootFull) { throw "Source path cannot be resolved: $Root" }
+    $pluginRoot = $rootFull
+    $relRoot = Get-JsonMember (Get-JsonMember $json 'metadata') 'pluginRoot'
+    if ($relRoot) {
+      # metadata.pluginRoot is untrusted input too: "../.." here would move the
+      # base of every later join outside the source tree, so refuse it up front
+      # rather than skipping each plugin in turn.
+      $pluginRoot = Get-NormalizedPath (Join-Path $rootFull ([string]$relRoot))
+      if (-not $pluginRoot -or -not (Test-PathContained -Base $rootFull -Candidate $pluginRoot)) {
+        throw "metadata.pluginRoot escapes the source repo: $relRoot"
+      }
     }
 
     $names = @()
     if ($Only -and $Only.Count -gt 0) {
+      # Matched case-SENSITIVELY (-ceq below; the bash twin uses Python's ==).
+      # The official schema constrains a plugin name to
+      # ^[a-z0-9]([a-z0-9.-]*[a-z0-9])?$, so exact matching is the schema-correct
+      # and stricter choice: "Foo" must not silently select "foo".
       $names = $Only
-    } elseif ($json.plugins) {
-      $names = @($json.plugins | ForEach-Object { [string]$_.name })
+    } else {
+      # Nameless entries are dropped here rather than carried through to the
+      # write-side guard, so a malformed marketplace produces the same result in
+      # both twins (the bash lister filters the empty line its parser emits).
+      $names = @($entries | ForEach-Object { [string](Get-JsonMember $_ 'name') } | Where-Object { $_ })
     }
 
     foreach ($name in $names) {
-      $entry = $null
-      if ($json.plugins) {
-        $entry = @($json.plugins | Where-Object { [string]$_.name -eq $name } | Select-Object -First 1)
-      }
+      $entry = $entries | Where-Object { [string](Get-JsonMember $_ 'name') -ceq $name } | Select-Object -First 1
       $rel = $name
-      if ($entry -and $entry.source) {
-        if ($entry.source -is [string]) { $rel = [string]$entry.source }
-        elseif ($entry.source.path) { $rel = [string]$entry.source.path }
+      $entrySource = Get-JsonMember $entry 'source'
+      if ($entrySource) {
+        if ($entrySource -is [string]) {
+          $rel = [string]$entrySource
+        } else {
+          $entryPath = Get-JsonMember $entrySource 'path'
+          if ($entryPath) { $rel = [string]$entryPath }
+        }
       }
-      $dirs += [pscustomobject]@{ Name = $name; Path = (Join-Path $pluginRoot $rel) }
+      # $rel is untrusted marketplace.json content (plugins[].source, or
+      # plugins[].source.path). A value of "../../../etc" would make the read side
+      # copy files from outside the source repo into the user's plugins root - the
+      # mirror image of the write-side name guard in the caller, which was already
+      # closed. Resolve the join and require it to stay under $pluginRoot.
+      $candidate = Get-NormalizedPath (Join-Path $pluginRoot $rel)
+      if (-not $candidate -or -not (Test-PathContained -Base $pluginRoot -Candidate $candidate)) {
+        $dirs += [pscustomobject]@{ Name = $name; Path = $null; Skip = "source escapes plugin root" }
+        continue
+      }
+      $dirs += [pscustomobject]@{ Name = $name; Path = $candidate; Skip = $null }
     }
   } elseif (Test-Path $rootPlugin) {
-    $name = (Get-Content $rootPlugin -Raw | ConvertFrom-Json).name
-    if (-not $name) { $name = Split-Path $Root -Leaf }
-    if ($Only -and $Only.Count -gt 0 -and ($Only -notcontains $name)) {
+    # An unparseable plugin.json aborts here (ConvertFrom-Json throws under
+    # $ErrorActionPreference = "Stop"), where the bash twin warns and falls back
+    # to the directory name. That divergence is deliberate: bash's parser is an
+    # external optional dependency, so it must distinguish "python3 missing" from
+    # "manifest broken" and stay usable in the first case; ConvertFrom-Json is
+    # built in, so a failure here can only mean a broken manifest.
+    $name = [string](Get-JsonMember (Get-Content $rootPlugin -Raw | ConvertFrom-Json) 'name')
+    if (-not $name) {
+      # The directory name is a guess: a manifest saying {"name":"good"} in a
+      # directory called "single" would otherwise sync silently as "single", with
+      # exit 0 and no hint that the name is wrong. Say so, as the bash twin does.
+      # Written straight to stderr (not Write-Warning) so the text matches the
+      # twin's byte for byte.
+      $name = Split-Path $Root -Leaf
+      [Console]::Error.WriteLine("Warning: falling back to the directory name '$name', which may not be the plugin's declared name")
+    }
+    # Case-SENSITIVE (-cnotcontains) for the reason given above.
+    if ($Only -and $Only.Count -gt 0 -and ($Only -cnotcontains $name)) {
       throw "Plugin filter excluded single plugin '$name'"
     }
-    $dirs += [pscustomobject]@{ Name = $name; Path = $Root }
+    $dirs += [pscustomobject]@{ Name = $name; Path = $Root; Skip = $null }
   } else {
     # Fallback: plugins/* layout without marketplace.json
     $pluginsDir = Join-Path $Root "plugins"
@@ -104,7 +206,7 @@ function Resolve-PluginDirs {
         Get-ChildItem $pluginsDir -Directory | ForEach-Object { $_.FullName }
       }
       foreach ($p in $candidates) {
-        $dirs += [pscustomobject]@{ Name = (Split-Path $p -Leaf); Path = $p }
+        $dirs += [pscustomobject]@{ Name = (Split-Path $p -Leaf); Path = $p; Skip = $null }
       }
     }
   }
@@ -164,6 +266,10 @@ try {
   New-Item -ItemType Directory -Force -Path $localRoot | Out-Null
 
   $pluginDirs = @(Resolve-PluginDirs -Root $workRoot -Only $Plugin)
+  # Covers both "no recognised layout" and "layout found but it named no plugins"
+  # (e.g. an empty plugins/ dir, or "plugins": [] in marketplace.json). Entries
+  # that were named but refused are still counted here, so they fall through to
+  # the Skipped report instead of being swallowed by this message.
   if ($pluginDirs.Count -eq 0) {
     throw "No Cursor plugins found under $workRoot (need marketplace.json or plugin.json)."
   }
@@ -172,6 +278,10 @@ try {
   $skipped = @()
 
   foreach ($entry in $pluginDirs) {
+    if ($entry.Skip) {
+      $skipped += "$($entry.Name) ($($entry.Skip))"
+      continue
+    }
     # Name comes from untrusted marketplace.json/plugin.json and is joined onto
     # $localRoot before Remove-Item. Keep it a single path segment so the
     # destination cannot escape the plugins root.
@@ -195,13 +305,23 @@ try {
   Write-Host ""
   Write-Host "Source: $workRoot"
   Write-Host "Local:  $localRoot"
-  Write-Host "Synced ($($synced.Count)): $($synced -join ', ')"
+  # A dry run copies nothing, so it must not report "Synced" -- that reads as work
+  # done. The real-run line is unchanged.
+  $syncedLabel = if ($DryRun) { "Would sync" } else { "Synced" }
+  Write-Host "$syncedLabel ($($synced.Count)): $($synced -join ', ')"
   if ($skipped.Count -gt 0) {
     Write-Host "Skipped ($($skipped.Count)): $($skipped -join '; ')"
   }
   Write-Host "Reload Cursor: Developer: Reload Window"
 }
 finally {
+  # Known limitation, deliberately not worked around: this `finally` runs on normal
+  # completion, on a thrown error and on SIGINT (Ctrl+C), but PowerShell offers no
+  # portable SIGTERM/SIGHUP hook, so a `kill` or a closed terminal leaves the temp
+  # clone behind in the temp directory. The bash twin's `trap cleanup EXIT` does
+  # cover TERM and HUP; that stronger guarantee is kept there rather than degraded
+  # to match here. "Kept clone:" is printed from here, after "Reload Cursor:", and
+  # the bash twin prints it from its exit handler for the same ordering.
   if ($tempClone -and (Test-Path $tempClone)) {
     if ($KeepClone) {
       Write-Host "Kept clone: $tempClone"
