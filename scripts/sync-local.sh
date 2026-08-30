@@ -132,12 +132,20 @@ elif [[ -d "$work_root/plugins" ]]; then
     sel=("${plugins[@]}")
   else
     # Glob rather than `find -printf`: -printf/-mindepth/-maxdepth are GNU
-    # extensions (absent from POSIX and BSD find). Pathname expansion is already
-    # sorted, so this also replaces the `| sort`.
+    # extensions (absent from POSIX and BSD find). The glob sorts by full path
+    # *including* the trailing slash, and `-` (0x2D) and `.` (0x2E) both sort
+    # before `/` (0x2F) -- so a name that is a prefix of another would come out
+    # after it ("ai-briefing" before "ai"). Sort the basenames explicitly to keep
+    # the order `find | sort` produced, which is also what the pwsh twin's
+    # Get-ChildItem yields.
     sel=()
-    for dir in "$work_root"/plugins/*/; do
-      if [[ -d "$dir" ]]; then sel+=("$(basename "$dir")"); fi
-    done
+    while IFS= read -r plugin_name; do
+      if [[ -n "$plugin_name" ]]; then sel+=("$plugin_name"); fi
+    done < <(
+      for dir in "$work_root"/plugins/*/; do
+        if [[ -d "$dir" ]]; then basename "$dir"; fi
+      done | LC_ALL=C sort
+    )
   fi
   for name in "${sel[@]}"; do
     names+=("$name")
@@ -173,7 +181,14 @@ for i in "${!names[@]}"; do
     echo "[dry-run] $name -> $dst"
   else
     rm -rf "$dst"
-    cp -R "$src" "$dst"
+    # Copy the *contents* ("$src/."), not the directory entry. `cp -R` without
+    # -H/-L copies a symlinked source as a symlink (POSIX-specified, same on GNU
+    # and BSD), which would install a link into the plugins root and break this
+    # script's stated contract of real directory copies -- and leave a dangling
+    # link once a temp clone is cleaned up. Trailing "/." dereferences only the
+    # top level, so symlinks *inside* a plugin are still copied as symlinks.
+    mkdir -p "$dst"
+    cp -R "$src/." "$dst"
     echo "synced $name -> $dst"
   fi
   synced+=("$name")
