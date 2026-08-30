@@ -9,12 +9,20 @@ description: Install a Cursor plugin marketplace or plugin for the user's plan (
 
 Before any recommendation, fetch and skim:
 
-1. https://cursor.com/docs/plugins — Team marketplaces, Add marketplace, Installing plugins, Test plugins locally
+1. https://cursor.com/docs/plugins — sections **Team marketplaces**, **Add a team marketplace**, **Installing plugins**, **Test plugins locally**
 2. https://cursor.com/docs/reference/plugins — multi-plugin `marketplace.json` shape
 3. https://cursor.com/docs/integrations/github — only if Team Auto Refresh / GitHub App comes up
 
 Use `plugins/plugin-ops/reference/DOC-SOURCES.md`. **Docs win** over this skill.
 Melodic policy: `docs/PLUGIN-PHILOSOPHY.md`.
+
+**Verified 2026-08-30.** The current docs describe exactly three install routes: the
+Cursor Marketplace via **Customize**, Team marketplaces via the Dashboard, and
+`~/.cursor/plugins/local`. They document **no** `/add-plugin` command and **no**
+personal (non-team) marketplace — neither term appears on
+https://cursor.com/docs/plugins, https://cursor.com/docs/reference/plugins,
+https://cursor.com/help/customization/plugins, or the docs sitemap. Re-fetch before
+offering either as a supported path.
 
 ## Clarify
 
@@ -27,9 +35,9 @@ Melodic policy: `docs/PLUGIN-PHILOSOPHY.md`.
 
 | Situation | Path to prefer (confirm against live docs) |
 | --- | --- |
-| Personal / Ultra / “just me” + easy UI | `/add-plugin <github-url>` (personal marketplace). Warn that refresh/update may be flaky; offer `sync-local` as the reliable updater. |
+| Personal / Ultra / “just me” + easy UI | Documented route: **Customize** → find the plugin → **Install**, choosing project or user scope. `/add-plugin <github-url>` (a “personal marketplace”) appears in older write-ups but is absent from the current docs — do not present it as supported without a live fetch that shows it; offer `sync-local` as the reliable updater either way. |
 | Enterprise/Teams **admin** + share with org/group | Dashboard → **Plugins** → **Team Marketplaces** → **Add Marketplace** / Import from Repo. Set Marketplace Access + install modes per docs. |
-| Admin but **only myself** | Prefer personal `/add-plugin` or `sync-local`. Team Marketplace is org-scoped; restricting to a one-person Organization Group is possible but heavier. |
+| Admin but **only myself** | Prefer a user-scoped install from **Customize**, or `sync-local`. Team Marketplace is org-scoped; restricting to a one-person Organization Group is possible but heavier. |
 | Teams/Enterprise **member** (not admin) | Install from Customize after admin added the marketplace; cannot import the repo yourself. |
 | Need disk-truth / stuck updates | `sync-local` with path or URL (real copies into `~/.cursor/plugins/local`). |
 | Official Cursor Marketplace listing | Publish flow at https://cursor.com/marketplace/publish — separate from Team/personal GitHub import. |
@@ -45,5 +53,5 @@ Melodic policy: `docs/PLUGIN-PHILOSOPHY.md`.
 
 ## Do not
 
-- Claim Team Marketplace Auto Refresh exists for personal `/add-plugin` unless docs say so.
+- Claim Team Marketplace Auto Refresh reaches anything outside a Team marketplace (personal installs, `~/.cursor/plugins/local`) unless docs say so.
 - Put Melodic (or any third-party) marketplace into a work org without the user confirming policy.
