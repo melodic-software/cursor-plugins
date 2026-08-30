@@ -32,10 +32,11 @@ Ports: [MIGRATION-PLAYBOOK.md](MIGRATION-PLAYBOOK.md).
 | --- | --- | --- |
 | Plugins overview (Team, install, local test) | https://cursor.com/docs/plugins | 2026-08-30 |
 | Plugins reference (manifests, discovery, marketplace.json, variables) | https://cursor.com/docs/reference/plugins | 2026-08-30 |
-| Plugin template | https://github.com/cursor/plugin-template | 2026-08-30 |
+| Plugin template | https://github.com/cursor/plugin-template | **blocked** — HTTP 403 via proxy on 2026-08-30 (bot response, not a dead link; see [DOC-SOURCES fetch status](../plugins/plugin-ops/reference/DOC-SOURCES.md#fetch-status-2026-08-30)) |
 | Marketplace manifest JSON Schema (authority; prose table is looser) | https://raw.githubusercontent.com/cursor/plugins/main/schemas/marketplace.schema.json | 2026-08-30 |
 | Plugin manifest JSON Schema (declares `category`, `tags`) | https://raw.githubusercontent.com/cursor/plugins/main/schemas/plugin.schema.json | 2026-08-30 |
-| CLI slash commands (`/plugin marketplace add`, user-scoped marketplaces) | https://cursor.com/docs/cli/reference/slash-commands | 2026-08-30 |
+| CLI slash commands (lists `/plugin [subcommand]` — "Manage plugins and marketplaces") | https://cursor.com/docs/cli/reference/slash-commands | 2026-08-30 |
+| CLI changelog (authority for `/plugin marketplace add <git-url>`, `--git-ref` pinning, `marketplace list/update/remove`, `--plugin-dir`; user-scoped marketplaces) | https://cursor.com/docs/cli/changelog | 2026-08-30 |
 | Publish to Cursor Marketplace | https://cursor.com/marketplace/publish | 2026-08-30 |
 | Agent Skills open standard | https://agentskills.io | 2026-08-30 |
 
@@ -47,7 +48,13 @@ Ports: [MIGRATION-PLAYBOOK.md](MIGRATION-PLAYBOOK.md).
 | GitHub App (required by Team Auto Refresh; Auto Refresh itself is documented on the plugins page) | https://cursor.com/docs/integrations/github | 2026-08-30 |
 | Test plugins locally (`~/.cursor/plugins/local`) | https://cursor.com/docs/plugins (Test plugins locally) | 2026-08-30 |
 
-Optional community index (not official): https://cursor.directory
+Optional community index (not official): https://cursor.directory — **blocked**,
+HTTP 429 via proxy on 2026-08-30 (rate limit, not a dead link; see
+[DOC-SOURCES fetch status](../plugins/plugin-ops/reference/DOC-SOURCES.md#fetch-status-2026-08-30)).
+
+Every other Cursor URL on this page was fetched live on 2026-08-30 and returned
+HTTP 200. A `Verified` date here means exactly that — a live fetch whose content
+still matched the row — never "the row was edited that day".
 
 ## Claude Code (inspiration only)
 
