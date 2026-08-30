@@ -13,8 +13,7 @@
     {
       "name": "plugin-ops",
       "source": "plugin-ops",
-      "description": "Plan-aware Cursor plugin/marketplace install, update, local sync, and verify — always fetch official Cursor docs live.",
-      "category": "development"
+      "description": "Plan-aware Cursor plugin/marketplace install, update, local sync, and verify — always fetch official Cursor docs live."
     }
   ]
 }
