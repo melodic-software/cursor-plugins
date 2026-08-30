@@ -1,7 +1,8 @@
 # ShellCheck configuration for this repository.
 #
-# Scope: scripts/*.sh. Run `shellcheck scripts/sync-local.sh`; the default rule
-# set must stay at zero findings.
+# Scope: scripts/*.sh. Run `shellcheck scripts/*.sh`; the default rule set must
+# stay at zero findings across every script in that directory. Site counts quoted
+# below were measured against scripts/sync-local.sh, the largest of them.
 #
 # Nothing is disabled here. ShellCheck's default rules are all in force, and no
 # `# shellcheck disable=` directive appears anywhere in the tree. This file exists
