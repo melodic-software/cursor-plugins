@@ -13,9 +13,8 @@
     {
       "name": "plugin-ops",
       "source": "plugin-ops",
-      "description": "Plan-aware install/update/sync/verify for Cursor plugins and marketplaces; fetches official docs live.",
-      "category": "development",
-      "tags": ["sync", "local", "marketplace", "enterprise", "teams", "ultra"]
+      "description": "Plan-aware Cursor plugin/marketplace install, update, local sync, and verify — always fetch official Cursor docs live.",
+      "category": "development"
     }
   ]
 }
