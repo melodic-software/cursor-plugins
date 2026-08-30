@@ -1,0 +1,144 @@
+name: CI
+
+# This repository has no build and no package manager. CI is therefore the
+# lint/validate proxies documented in AGENTS.md, plus the sync-local regression
+# suite, run on every push and pull request.
+#
+# Scope note: the repo-root config files synced from melodic-software/standards
+# (.editorconfig, .gitattributes, _typos.toml, lychee.toml, .gitleaks.toml,
+# .markdownlint-cli2.jsonc, .editorconfig-checker.json) are validated by their
+# own tooling upstream and are deliberately not re-linted here.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  shell:
+    name: Shell (shellcheck + regression suite)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install shellcheck
+        run: sudo apt-get update && sudo apt-get install -y shellcheck
+
+      - name: shellcheck (must be zero findings)
+        run: shellcheck scripts/*.sh
+
+      - name: bash -n (syntax floor)
+        run: for f in scripts/*.sh; do bash -n "$f"; done
+
+      # pwsh is preinstalled on ubuntu-latest, so the suite exercises BOTH twins
+      # here and asserts their output is byte-identical.
+      - name: sync-local regression suite
+        run: bash scripts/test-sync-local.sh
+
+  powershell:
+    name: PowerShell (PSScriptAnalyzer)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install PSScriptAnalyzer
+        shell: pwsh
+        run: |
+          Set-PSRepository PSGallery -InstallationPolicy Trusted
+          Install-Module PSScriptAnalyzer -Scope CurrentUser -Force
+
+      # Suppressions in sync-local.ps1 are deliberate and each carries a written
+      # Justification; -SuppressedOnly is printed so a reviewer can see what is
+      # being suppressed rather than having it silently disappear.
+      - name: PSScriptAnalyzer (must be zero unsuppressed findings)
+        shell: pwsh
+        run: |
+          $suppressed = Invoke-ScriptAnalyzer -Path ./scripts/sync-local.ps1 -SuppressedOnly
+          if ($suppressed) {
+            Write-Host "Deliberately suppressed (each carries a Justification):"
+            $suppressed | Format-Table RuleName, @{n='Count';e={1}} -AutoSize | Out-String | Write-Host
+          }
+          $findings = Invoke-ScriptAnalyzer -Path ./scripts/sync-local.ps1
+          if ($findings) {
+            $findings | Format-Table Severity, RuleName, Line, Message -AutoSize -Wrap | Out-String | Write-Host
+            throw "PSScriptAnalyzer reported $($findings.Count) finding(s)."
+          }
+          Write-Host "PSScriptAnalyzer: 0 findings."
+
+  manifests:
+    name: Manifests (JSON + official Cursor schemas)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: jq — manifests are well-formed JSON
+        run: |
+          jq empty .cursor-plugin/marketplace.json
+          for f in plugins/*/.cursor-plugin/plugin.json; do jq empty "$f"; done
+
+      - name: Skill frontmatter — each SKILL.md opens with a YAML block
+        run: |
+          status=0
+          for f in plugins/*/skills/*/SKILL.md; do
+            if [ "$(head -1 "$f")" != "---" ]; then
+              echo "::error file=$f::SKILL.md must start with a --- YAML frontmatter block"
+              status=1
+            fi
+          done
+          exit $status
+
+      # Validated against Cursor's PUBLISHED schemas, fetched at run time. These
+      # are the authority: Cursor's prose reference and its schemas disagree in
+      # both directions, so a prose-derived checklist would pass files the
+      # schema rejects. A fetch failure fails the job rather than skipping the
+      # check silently.
+      - name: Validate manifests against the official schemas
+        run: |
+          set -euo pipefail
+          npm init -y >/dev/null 2>&1
+          npm install --no-fund --no-audit --silent ajv@8 ajv-formats
+          base=https://raw.githubusercontent.com/cursor/plugins/main/schemas
+          curl -fsS "$base/marketplace.schema.json" -o marketplace.schema.json
+          curl -fsS "$base/plugin.schema.json" -o plugin.schema.json
+          node scripts/validate-manifests.mjs
+
+  links:
+    name: Docs (internal link integrity)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      # Relative links only. External URLs are deliberately NOT checked here:
+      # GitHub and cursor.directory return 403/429 to CI runners, which would
+      # make this job fail for reasons that say nothing about the repository.
+      #
+      # Inline code spans are stripped BEFORE extracting links. Without that, a
+      # regex inside backticks parses as link syntax and reports a false
+      # positive: the plugin-name pattern `^[a-z0-9]([a-z0-9.-]*[a-z0-9])?$`
+      # looks exactly like ](...) to a naive matcher.
+      - name: Every relative markdown link resolves on disk
+        run: |
+          status=0
+          while IFS= read -r src; do
+            dir=$(dirname "$src")
+            while IFS= read -r link; do
+              case "$link" in http*|mailto:*|'') continue ;; esac
+              target=${link%%#*}
+              [ -z "$target" ] && continue
+              if [ ! -e "$dir/$target" ]; then
+                echo "::error file=$src::broken relative link -> $link"
+                status=1
+              fi
+            done < <(sed 's/`[^`]*`//g' "$src" |
+                     grep -oE '\]\([^)#][^)]*\)' |
+                     sed 's/^](//; s/)$//')
+          done < <(git ls-files '*.md')
+          exit $status

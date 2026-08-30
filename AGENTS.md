@@ -10,9 +10,22 @@ and the `scripts/sync-local.*` sync tooling. See `README.md` and
 
 ### Environment / dependencies
 
-- There is **no package manager, build step, or test framework**. Nothing needs to be
-  installed to work here — the required tools (`bash`, `git`, `python3`, `jq`) are all
-  present in the base image, so the startup update script is a no-op.
+- There is **no package manager and no build step**. The tools the repo's own scripts
+  need at runtime (`bash`, `git`, `python3`, `jq`) are all present in the base image, so
+  the startup update script is a no-op.
+- There **is** a test suite: `bash scripts/test-sync-local.sh`. See "Test" below.
+- The lint and test tooling is **not** all preinstalled. Probe with `command -v` and
+  install what is missing; never assume:
+
+  | Tool | Needed for | If missing |
+  | --- | --- | --- |
+  | `shellcheck` | linting `scripts/*.sh` | `sudo apt-get install -y shellcheck` |
+  | `pwsh` | running/testing `sync-local.ps1` | see the caveat below — the `.sh` twin covers Linux |
+  | `PSScriptAnalyzer` | linting `sync-local.ps1` | `pwsh -c "Install-Module PSScriptAnalyzer -Scope CurrentUser -Force"` |
+  | `node` + `ajv` | validating manifests against Cursor's schemas | `npm install ajv@8 ajv-formats` |
+
+  Only `bash`, `git`, `python3` and `jq` are relied on at runtime; everything in that
+  table is for checking the repo, not for using it.
 
 ### Lint / validate (there is no configured linter — use these proxies)
 
@@ -29,6 +42,31 @@ and the `scripts/sync-local.*` sync tooling. See `README.md` and
 - JSON manifests: `jq empty .cursor-plugin/marketplace.json` and
   `jq empty plugins/*/.cursor-plugin/plugin.json`
 - Skill frontmatter: each `plugins/*/skills/*/SKILL.md` must start with a `---` YAML block.
+- PowerShell: `pwsh -c "Invoke-ScriptAnalyzer -Path ./scripts/sync-local.ps1"` must report
+  **zero** findings. `sync-local.ps1` carries two file-level
+  `SuppressMessageAttribute` entries, each with a written Justification; add
+  `-SuppressedOnly` to see them. Do not add a suppression without one.
+- Manifest **schemas**: `jq empty` only proves the JSON parses. Cursor publishes real
+  schemas, and its prose reference disagrees with them **in both directions** — the prose
+  lists plugin-entry fields the schema forbids, and marks `owner` required where the
+  schema does not. The schema wins. CI fetches both and runs
+  `node scripts/validate-manifests.mjs`; run it the same way locally.
+
+### Test
+
+- `bash scripts/test-sync-local.sh` — the sync-local regression suite. Every case runs
+  **both** twins against the same fixture and asserts the same exit code and
+  byte-identical stdout, because a divergence between documented parity twins is itself a
+  defect. It builds its fixtures under `$TMPDIR` and redirects `HOME` per case, so it
+  never touches your real `~/.cursor`.
+- `pwsh` is optional: without it the PowerShell half reports as skipped and the bash half
+  still runs.
+- Add a case whenever you fix a defect here. The suite already pins the ones that were
+  found the hard way: path traversal via a plugin `name` and via an entry `source`, a
+  `pluginRoot` that escapes the repo, an empty `plugins/` and `"plugins": []` (which used
+  to exit 0 printing `Synced (0)`), a nameless marketplace entry (which used to dump a
+  Python traceback), prefix-name sort order, and a symlinked plugin directory (which must
+  install as a **real** directory, not a link).
 
 ### Run (the "application")
 
@@ -55,6 +93,19 @@ and the `scripts/sync-local.*` sync tooling. See `README.md` and
   `docs/PLUGIN-PHILOSOPHY.md`) mean "a live fetch of that URL still matched this row on
   that date". Never bump one without fetching. A 403/429 is a blocked fetch, not a
   verification and not a dead link — record it as blocked and leave the old date.
+
+### CI
+
+`.github/workflows/ci.yml` runs the checks above on every push and pull request: shell
+lint plus the regression suite, PSScriptAnalyzer, JSON and schema validation of the
+manifests, and internal markdown link integrity. It deliberately does **not** check
+external URLs — GitHub and cursor.directory answer CI runners with 403/429, which would
+fail the build for reasons that say nothing about the repository. Note that GitHub's
+runners preinstall `pwsh`, so CI exercises both twins even though a Cursor Cloud box may
+not.
+
+The repo-root files synced from `melodic-software/standards` are not re-linted here; they
+are validated upstream, and this repo must not hand-edit them.
 
 ### Non-obvious caveats
 
