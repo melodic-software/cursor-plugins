@@ -28,7 +28,9 @@ and the `scripts/sync-local.*` sync tooling. See `README.md` and
   `plugins/plugin-ops/skills/sync-local/SKILL.md`. Example:
   `bash scripts/sync-local.sh . plugin-ops` (sync this repo's `plugin-ops` plugin).
 - `scripts/sync-local.sh` uses `python3` to parse `marketplace.json`; it is required for
-  the default (all-plugins) mode.
+  any source that has a `.cursor-plugin/marketplace.json`, including when specific plugin
+  names are passed (the script resolves `metadata.pluginRoot` and each entry's `source`
+  with `python3` either way).
 
 ### Non-obvious caveats
 

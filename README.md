@@ -60,7 +60,8 @@ Then **Developer: Reload Window**.
 
 Plan cheat-sheet (always re-check live docs):
 
-- **Personal / Ultra:** `/add-plugin <url>` and/or `sync-local`
+- **Personal / Ultra:** **Customize** → find the plugin → **Install** (project or user
+  scope), and/or `sync-local`. The current docs document **no** `/add-plugin` command.
 - **Teams/Enterprise admin:** Dashboard → Plugins → Team Marketplaces (Auto Refresh optional)
 - **Org member:** install from Customize after admin import
 

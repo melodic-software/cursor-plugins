@@ -54,8 +54,11 @@ For each Claude plugin you choose to port:
 1. **Run the pre-port review** (table above). Reject ports that would add
    discouraged `commands/` or Claude-only surfaces without a map.
 2. **Create** `plugins/<name>/.cursor-plugin/plugin.json` with Cursor fields only
-   (`name`, `version`, `description`, `author`, `license`, `keywords`, optional
-   component path overrides and `variables`).
+   (`name`, `version`, `description`, `author`, `license`, `keywords`, `category`,
+   `tags`, optional component path overrides and `variables`). `category` and `tags`
+   belong **here**, not on the marketplace entry: `plugin.schema.json` declares both,
+   while `marketplace.schema.json` sets `"additionalProperties": false` on a plugin
+   entry.
 3. **Port content skills-first** into Cursor discovery folders under that plugin
    (`skills/`, and only as needed `agents/`, `rules/`, `hooks/`, `mcp.json`).
    Do **not** create `commands/` for new ports.
@@ -64,7 +67,10 @@ For each Claude plugin you choose to port:
 5. **Adapt MCP** to Cursor `mcp.json` (`mcpServers`) and declare secrets via
    plugin `variables` (dashboard **Plugins → Configure**).
 6. **Register** the plugin in root `.cursor-plugin/marketplace.json`
-   (`metadata.pluginRoot` is `plugins`; entry `source` is the directory name).
+   (`metadata.pluginRoot` is `plugins`; entry `source` is the directory name). A
+   schema-valid entry carries only `name`, `source`, `description`, and optional
+   `minClientVersions` — narrower than the "Plugin entry fields" table in the plugins
+   reference, so validate against `marketplace.schema.json`, not the prose table.
 7. **Acceptance gates** (all required before merge):
    - Component-stance check against [PLUGIN-PHILOSOPHY.md](PLUGIN-PHILOSOPHY.md)
    - Live verify via `verify-plugin` skill (Cursor checklist + Melodic policy)
