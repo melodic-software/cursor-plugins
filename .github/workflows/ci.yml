@@ -27,7 +27,9 @@ jobs:
     name: Shell (shellcheck + regression suite)
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      # actions/checkout v5.1.0 — pinned to a full-length commit SHA because this
+      # org requires it; a tag or short SHA is rejected at "Set up job".
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09
 
       - name: Install shellcheck
         run: sudo apt-get update && sudo apt-get install -y shellcheck
@@ -47,7 +49,9 @@ jobs:
     name: PowerShell (PSScriptAnalyzer)
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      # actions/checkout v5.1.0 — pinned to a full-length commit SHA because this
+      # org requires it; a tag or short SHA is rejected at "Set up job".
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09
 
       - name: Install PSScriptAnalyzer
         shell: pwsh
@@ -77,7 +81,9 @@ jobs:
     name: Manifests (JSON + official Cursor schemas)
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      # actions/checkout v5.1.0 — pinned to a full-length commit SHA because this
+      # org requires it; a tag or short SHA is rejected at "Set up job".
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09
 
       - name: jq — manifests are well-formed JSON
         run: |
@@ -114,7 +120,9 @@ jobs:
     name: Docs (internal link integrity)
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      # actions/checkout v5.1.0 — pinned to a full-length commit SHA because this
+      # org requires it; a tag or short SHA is rejected at "Set up job".
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09
 
       # Relative links only. External URLs are deliberately NOT checked here:
       # GitHub and cursor.directory return 403/429 to CI runners, which would
