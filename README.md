@@ -60,7 +60,11 @@ Then **Developer: Reload Window**.
 
 Plan cheat-sheet (always re-check live docs):
 
-- **Personal / Ultra:** `/add-plugin <url>` and/or `sync-local`
+- **Personal / Ultra:** `/plugin marketplace add https://github.com/melodic-software/cursor-plugins`,
+  then install the plugins you want at user or project scope. Pin a ref with
+  `agent plugin marketplace add <url> --git-ref <ref>`; refresh with
+  `/plugin marketplace update`. And/or `sync-local`. (This is what `/add-plugin` was
+  renamed to — **Customize** only browses marketplaces already registered.)
 - **Teams/Enterprise admin:** Dashboard → Plugins → Team Marketplaces (Auto Refresh optional)
 - **Org member:** install from Customize after admin import
 

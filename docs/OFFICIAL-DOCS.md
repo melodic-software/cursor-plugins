@@ -17,34 +17,44 @@ Ports: [MIGRATION-PLAYBOOK.md](MIGRATION-PLAYBOOK.md).
 
 | Component | Official doc | Melodic stance | Verified |
 | --- | --- | --- | --- |
-| Skills (`skills/`) | https://cursor.com/docs/skills | Primary | 2026-07-31 |
-| Skills (help) | https://cursor.com/help/customization/skills | Primary (help) | 2026-07-31 |
-| Commands (`commands/`) | https://cursor.com/docs/reference/plugins (Commands format) | Discouraged here — still documented by Cursor | 2026-07-31 |
-| Rules (`rules/`) | https://cursor.com/docs/rules | Adopt on need | 2026-07-31 |
-| Agents (`agents/`) | https://cursor.com/docs/reference/plugins (Agents format) | Adopt on need | 2026-07-31 |
-| Hooks | https://cursor.com/docs/hooks | Adopt on need | 2026-07-31 |
-| Third-party / Claude Code hooks | https://cursor.com/docs/reference/third-party-hooks | Reshape / document separately | 2026-07-31 |
-| MCP | https://cursor.com/docs/mcp | Adopt on need | 2026-07-31 |
+| Skills (`skills/`) | https://cursor.com/docs/skills | Primary | 2026-08-30 |
+| Skills (help) | https://cursor.com/help/customization/skills | Primary (help) | 2026-08-30 |
+| Commands (`commands/`) | https://cursor.com/docs/reference/plugins (Commands format) | Discouraged here — still documented by Cursor | 2026-08-30 |
+| Rules (`rules/`) | https://cursor.com/docs/rules | Adopt on need | 2026-08-30 |
+| Agents (`agents/`) | https://cursor.com/docs/reference/plugins (Agents format) | Adopt on need | 2026-08-30 |
+| Hooks | https://cursor.com/docs/hooks | Adopt on need | 2026-08-30 |
+| Third-party / Claude Code hooks | https://cursor.com/docs/reference/third-party-hooks | Reshape / document separately — Cursor loads Claude Code hooks only after "Include third-party Plugins, Skills, and other configs" is enabled | 2026-08-30 |
+| MCP | https://cursor.com/docs/mcp | Adopt on need | 2026-08-30 |
 
 ## Authoring / packaging
 
 | Topic | Official doc | Verified |
 | --- | --- | --- |
-| Plugins overview (Team, install, local test) | https://cursor.com/docs/plugins | 2026-07-31 |
-| Plugins reference (manifests, discovery, marketplace.json, variables) | https://cursor.com/docs/reference/plugins | 2026-07-31 |
-| Plugin template | https://github.com/cursor/plugin-template | 2026-07-31 |
-| Publish to Cursor Marketplace | https://cursor.com/marketplace/publish | 2026-07-31 |
-| Agent Skills open standard | https://agentskills.io | 2026-07-31 |
+| Plugins overview (Team, install, local test) | https://cursor.com/docs/plugins | 2026-08-30 |
+| Plugins reference (manifests, discovery, marketplace.json, variables) | https://cursor.com/docs/reference/plugins | 2026-08-30 |
+| Plugin template | https://github.com/cursor/plugin-template | **blocked** — HTTP 403 via proxy on 2026-08-30 (bot response, not a dead link; see [DOC-SOURCES fetch status](../plugins/plugin-ops/reference/DOC-SOURCES.md#fetch-status-2026-08-30)) |
+| Marketplace manifest JSON Schema (authority; prose table is looser) | https://raw.githubusercontent.com/cursor/plugins/main/schemas/marketplace.schema.json | 2026-08-30 |
+| Plugin manifest JSON Schema (declares `category`, `tags`) | https://raw.githubusercontent.com/cursor/plugins/main/schemas/plugin.schema.json | 2026-08-30 |
+| CLI slash commands (lists `/plugin [subcommand]` — "Manage plugins and marketplaces") | https://cursor.com/docs/cli/reference/slash-commands | 2026-08-30 |
+| CLI changelog (authority for `/plugin marketplace add <git-url>`, `--git-ref` pinning, `marketplace list/update/remove`, `--plugin-dir`; user-scoped marketplaces) | https://cursor.com/docs/cli/changelog | 2026-08-30 |
+| Publish to Cursor Marketplace | https://cursor.com/marketplace/publish | 2026-08-30 |
+| Agent Skills open standard | https://agentskills.io | 2026-08-30 |
 
 ## Distribution / marketplace
 
 | Topic | Official doc | Verified |
 | --- | --- | --- |
-| Team marketplaces, Auto Refresh, install modes | https://cursor.com/docs/plugins | 2026-07-31 |
-| GitHub App (Team Auto Refresh) | https://cursor.com/docs/integrations/github | 2026-07-31 |
-| Test plugins locally (`~/.cursor/plugins/local`) | https://cursor.com/docs/plugins (Test plugins locally) | 2026-07-31 |
+| Team marketplaces, Auto Refresh, install modes | https://cursor.com/docs/plugins | 2026-08-30 |
+| GitHub App (required by Team Auto Refresh; Auto Refresh itself is documented on the plugins page) | https://cursor.com/docs/integrations/github | 2026-08-30 |
+| Test plugins locally (`~/.cursor/plugins/local`) | https://cursor.com/docs/plugins (Test plugins locally) | 2026-08-30 |
 
-Optional community index (not official): https://cursor.directory
+Optional community index (not official): https://cursor.directory — **blocked**,
+HTTP 429 via proxy on 2026-08-30 (rate limit, not a dead link; see
+[DOC-SOURCES fetch status](../plugins/plugin-ops/reference/DOC-SOURCES.md#fetch-status-2026-08-30)).
+
+Every other Cursor URL on this page was fetched live on 2026-08-30 and returned
+HTTP 200. A `Verified` date here means exactly that — a live fetch whose content
+still matched the row — never "the row was edited that day".
 
 ## Claude Code (inspiration only)
 

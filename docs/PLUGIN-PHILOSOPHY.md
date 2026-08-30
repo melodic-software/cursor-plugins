@@ -44,29 +44,38 @@ changing a stance row below:
 | --- | --- | --- |
 | Skills | Primary; Agent Skills standard | Primary; Agent Skills standard |
 | `commands/` | Merged into skills; use `skills/` for new plugins (legacy flat files still load) | Still a **documented** plugin component in the plugins reference; Melodic **discourages** new `commands/` and ships skills instead |
-| Slash UX | Skill or legacy command → `/name` | Skills appear in `/`; optional `disable-model-invocation: true` for explicit-only |
-| Migration helper | Host docs | Built-in `/migrate-to-skills` for user/workspace rules and slash commands |
+| Slash UX | Skill or legacy command → `/name` | Skills appear in `/name` (run) and `@name` (attach as context); optional `disable-model-invocation: true` for explicit-only |
+| Migration helper | Host docs | Built-in `/migrate-to-skills` (Cursor 2.4+) for dynamic rules and user/workspace slash commands; rules with `alwaysApply: true` or `globs`, and user rules, are **not** migrated |
 | Config scalars | Manifest `userConfig` | Plugin `variables` + dashboard **Plugins → Configure** |
 | Hooks / MCP | Claude contracts | Cursor contracts — reshape; never assume Claude plugin hooks auto-run |
 
 Claude fleet policy that **prohibits** `commands/` is **not** Cursor law. Copy
 ideas, not host-specific prohibitions, unless a live Cursor fetch says the same.
 
+Cursor-side rows re-checked live 2026-08-30 against
+[reference/plugins](https://cursor.com/docs/reference/plugins) (*Commands format*,
+*Cursor Plugin component discovery*, *Variables*),
+[docs/skills](https://cursor.com/docs/skills) and
+[help/customization/skills](https://cursor.com/help/customization/skills). All still
+hold. The Claude Code column is not re-verified here — it is context, not policy.
+
 ## Component stances
 
 > **Staleness disclaimer.** The platform changes constantly. Every row carries
-> the date its facts were verified against the linked official page. Always
-> re-fetch before acting on a row.
+> the date its facts were last verified by a **live fetch of the linked page** —
+> not the date the row was last edited. A date here is never a substitute for
+> re-fetching before you act on the row. If a fetch is blocked (403/429/timeout),
+> the row keeps its older date and says so; a blocked fetch is not a verification.
 
 | Component | Stance | Rationale and constraints | Verified |
 | --- | --- | --- | --- |
-| [Skills](https://cursor.com/docs/skills) | **Primary surface** | Default unit of capability. Folder `skills/<name>/SKILL.md` (+ optional `scripts/`, `references/`, `assets/`). Use `paths` / `disable-model-invocation` per live skills docs. | 2026-07-31 |
-| [`commands/`](https://cursor.com/docs/reference/plugins) | **Discouraged** | Cursor still discovers command markdown under `commands/`. Melodic policy: do not add new command files; put the procedure in a skill. Thin slash stubs that only say “follow the skill” are prohibited. Exception requires a one-line README note + philosophy re-fetch that still needs a separate command. | 2026-07-31 |
-| [Rules](https://cursor.com/docs/rules) | Adopt on need | Short persistent guidance (`.mdc`). Prefer skills for multi-step procedures. | 2026-07-31 |
-| [Agents](https://cursor.com/docs/reference/plugins) | Adopt on need | Custom agent markdown under `agents/` when a distinct agent role is load-bearing. | 2026-07-31 |
-| [Hooks](https://cursor.com/docs/hooks) | Adopt on need | Cursor event model ≠ Claude. See also [third-party / Claude Code hooks](https://cursor.com/docs/reference/third-party-hooks). | 2026-07-31 |
-| [MCP](https://cursor.com/docs/mcp) | Adopt on need | `mcp.json` + `variables` for secrets (dashboard Configure). Clears trust review in the migration playbook. | 2026-07-31 |
-| Claude-only surfaces (workflows, channels, LSP plugin slots, Claude `userConfig`, Claude settings `agent`, etc.) | **Drop or map** | No silent port. Map only when a Cursor-native equivalent exists after a live-doc check; otherwise leave in Claude SSOT. | 2026-07-31 |
+| [Skills](https://cursor.com/docs/skills) | **Primary surface** | Default unit of capability. Folder `skills/<name>/SKILL.md` (+ optional `scripts/`, `references/`, `assets/`). Cursor walks the skills root recursively, so category subfolders are organizational only — identity comes from the folder holding `SKILL.md`. Use `paths` (`globs` is accepted only as a legacy fallback) / `disable-model-invocation` per live skills docs. | 2026-08-30 |
+| [`commands/`](https://cursor.com/docs/reference/plugins) | **Discouraged** | Cursor still discovers command markdown under `commands/`. Melodic policy: do not add new command files; put the procedure in a skill. Thin slash stubs that only say “follow the skill” are prohibited. Exception requires a one-line README note + philosophy re-fetch that still needs a separate command. | 2026-08-30 |
+| [Rules](https://cursor.com/docs/rules) | Adopt on need | Short persistent guidance (`.mdc`). Prefer skills for multi-step procedures. | 2026-08-30 |
+| [Agents](https://cursor.com/docs/reference/plugins) | Adopt on need | Custom agent markdown under `agents/` when a distinct agent role is load-bearing. | 2026-08-30 |
+| [Hooks](https://cursor.com/docs/hooks) | Adopt on need | Cursor event model ≠ Claude; plugin hooks live at `hooks/hooks.json`. See also [third-party / Claude Code hooks](https://cursor.com/docs/reference/third-party-hooks). | 2026-08-30 |
+| [MCP](https://cursor.com/docs/mcp) | Adopt on need | `mcp.json` + `variables` for secrets (dashboard Configure). Clears trust review in the migration playbook. | 2026-08-30 |
+| Claude-only surfaces (workflows, channels, LSP plugin slots, Claude `userConfig`, Claude settings `agent`, etc.) — checked against [Cursor Plugin component discovery](https://cursor.com/docs/reference/plugins) | **Drop or map** | No silent port. Cursor's discovery table still admits exactly six component types (`skills/`, `rules/`, `agents/`, `commands/`, `hooks/hooks.json`, `mcp.json`, plus a root `SKILL.md` single-skill form); none of the Claude-only surfaces above appear anywhere in the Cursor plugin docs. Map only when a Cursor-native equivalent exists after a live-doc check; otherwise leave in Claude SSOT. | 2026-08-30 |
 
 ## Decision matrix: rules vs skills vs commands
 
@@ -81,6 +90,14 @@ Pointers (fetch live): [Skills](https://cursor.com/docs/skills),
 [Rules](https://cursor.com/docs/rules),
 [Plugins reference](https://cursor.com/docs/reference/plugins),
 [Plugins overview](https://cursor.com/docs/plugins).
+
+Matrix re-checked live 2026-08-30; every row still holds. Supporting facts, all
+from those pages: rules are `.mdc` files controlled by `description` / `globs` /
+`alwaysApply` (a plain `.md` in `.cursor/rules` is ignored); `disable-model-invocation:
+true` makes a skill behave "like a traditional slash command"; a skill already
+registers `/name`, so a `commands/` alias adds nothing. Migrating an existing
+`commands/` layer is a one-shot job for Cursor's built-in `/migrate-to-skills`
+(2.4+) — see the Migration helper row above for what it does **not** convert.
 
 ## Configuration ownership
 

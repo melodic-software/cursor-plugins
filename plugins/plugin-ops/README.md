@@ -13,7 +13,7 @@ Melodic policy (skills primary; no new `commands/`):
 | Skill | Purpose |
 | --- | --- |
 | `/sync-local` | Copy plugin(s) from a path or git URL into `~/.cursor/plugins/local` |
-| `/install-marketplace` | Choose personal `/add-plugin`, Team Dashboard import, or local sync |
+| `/install-marketplace` | Choose `/plugin marketplace add`, Team Dashboard import, or local sync |
 | `/update-plugins` | Team Auto Refresh vs personal pin vs local re-sync |
 | `/verify-plugin` | Validate checkout against live Cursor docs + Melodic stances |
 
@@ -22,15 +22,35 @@ separate `commands/` layer.
 
 ## Script
 
-From the `cursor-plugins` repo (or pass another source):
+`scripts/sync-local.ps1` and `scripts/sync-local.sh` copy plugin(s) into
+`~/.cursor/plugins/local/<name>/` as **real directory copies**. The source is
+**optional** — both twins default to the repo containing the script, so a bare
+invocation syncs this marketplace.
+
+| Behavior | PowerShell | Bash |
+| --- | --- | --- |
+| Source (local path or git URL) | `-Source <path-or-url>` | first positional argument |
+| Plugin subset (marketplace sources) | `-Plugin a,b` | trailing positional arguments |
+| Git ref for URL sources | `-Ref <branch\|tag\|sha>` | `--ref <branch\|tag\|sha>` |
+| Print actions, write nothing | `-DryRun` | `--dry-run` |
+| Keep the temp clone of a URL source (path printed at the end) | `-KeepClone` | `--keep-clone` |
+
+Bash flags are position-independent: they may appear before, between, or after the
+positional arguments.
 
 ```powershell
-pwsh -File scripts/sync-local.ps1 -Source https://github.com/org/repo
+pwsh -File scripts/sync-local.ps1                                    # this repo, all plugins
 pwsh -File scripts/sync-local.ps1 -Source . -Plugin plugin-ops
-pwsh -File scripts/sync-local.ps1 -Source D:\path\to\single-plugin
+pwsh -File scripts/sync-local.ps1 -Source https://github.com/org/repo -Ref main -KeepClone
+pwsh -File scripts/sync-local.ps1 -Source D:\path\to\single-plugin -DryRun
 ```
 
 ```bash
-bash scripts/sync-local.sh https://github.com/org/repo
+bash scripts/sync-local.sh                                           # this repo, all plugins
 bash scripts/sync-local.sh . plugin-ops
+bash scripts/sync-local.sh --ref main --keep-clone https://github.com/org/repo
+bash scripts/sync-local.sh --dry-run /path/to/single-plugin
 ```
+
+Exit codes and the per-twin failure contract:
+[`skills/sync-local/SKILL.md`](skills/sync-local/SKILL.md).

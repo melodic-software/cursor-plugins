@@ -15,5 +15,14 @@
     "enterprise",
     "teams",
     "ultra"
+  ],
+  "category": "development",
+  "tags": [
+    "sync",
+    "local",
+    "marketplace",
+    "enterprise",
+    "teams",
+    "ultra"
   ]
 }

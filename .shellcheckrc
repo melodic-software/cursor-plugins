@@ -1,0 +1,41 @@
+# ShellCheck configuration for this repository.
+#
+# Scope: scripts/*.sh. Run `shellcheck scripts/sync-local.sh`; the default rule
+# set must stay at zero findings.
+#
+# Nothing is disabled here. ShellCheck's default rules are all in force, and no
+# `# shellcheck disable=` directive appears anywhere in the tree. This file exists
+# to record which of ShellCheck's OPTIONAL (opt-in, off by default) checks the
+# repository has considered and deliberately declined, so the question is settled
+# rather than re-litigated on every review. Enable one by adding an `enable=NAME`
+# line below; `shellcheck --list-optional` prints the full set.
+#
+# Declined
+# --------
+# require-variable-braces (SC2250) - "prefer ${var} over $var"; 101 sites in
+#   scripts/sync-local.sh. Declined. It is opt-in precisely because it is a style
+#   preference, not a correctness rule: ShellCheck already flags the unbraced
+#   references that actually change meaning (SC2086 word splitting, SC2154 and
+#   friends), and those checks are on by default. Google's Shell Style Guide
+#   likewise states a preference, not a requirement. The script's existing mix is
+#   internally consistent - braces where they disambiguate or carry an operator
+#   (`${temp_clone}` inside a larger word, `${#names[@]}`, `${synced_list%, }`),
+#   bare `$name` elsewhere. Enabling it would mean a 101-line no-behaviour diff to
+#   the repository's only script, and would re-flag every future edit.
+#
+# check-extra-masked-returns (SC2312) - "command substitution masks a return
+#   value"; 4 sites. Declined. Each is a deliberate, commented assignment under
+#   `set -e` whose failure mode is already handled in the surrounding code
+#   (`work_root="$(cd "$source" && pwd)"`, the `basename`/`printf` captures).
+#   Enabling it would add `|| exit` noise to substitutions that cannot
+#   meaningfully fail here.
+#
+# check-set-e-suppressed (SC2310/SC2311) - "function invoked in a condition, so
+#   set -e is disabled"; 6 sites. Declined. All six are the `if ! helper ...` and
+#   `if ! name="$(...)"` guards that exist *because* the script wants to inspect a
+#   failure rather than abort on it - that is the intended idiom, not a defect.
+#
+# Considered and not applicable (zero findings against the current sources, so
+# they are left at their defaults rather than pinned on): add-default-case,
+# avoid-nullary-conditions, check-unassigned-uppercase, deprecate-which,
+# quote-safe-variables, require-double-brackets.
