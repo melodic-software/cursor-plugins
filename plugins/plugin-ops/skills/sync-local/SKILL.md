@@ -1,6 +1,6 @@
 ---
 name: sync-local
-description: Sync any Cursor plugin or marketplace (local path or git URL) into ~/.cursor/plugins/local with real copies. Use when /add-plugin updates are stale, for Ultra/personal installs, or to pin disk copies of selected plugins.
+description: Sync any Cursor plugin or marketplace (local path or git URL) into ~/.cursor/plugins/local with real copies. Use when marketplace updates are stale or pinned, for Ultra/personal installs, or to pin disk copies of selected plugins.
 ---
 
 # Sync plugins to ~/.cursor/plugins/local
@@ -15,7 +15,9 @@ description: Sync any Cursor plugin or marketplace (local path or git URL) into 
 
 ## When to use
 
-- Personal / Ultra: reliable update path (personal `/add-plugin` can pin stale commits).
+- Personal / Ultra: disk-truth update path. A personally-added marketplace
+  (`/plugin marketplace add`, formerly `/add-plugin`) can be pinned with `--git-ref`,
+  so `/plugin marketplace update` will keep returning the pinned commit.
 - Any plan where local plugin imports are permitted: local override or offline copy of selected plugins (see step 6 — Enterprise disallows them by default).
 - Source can be **this Melodic repo**, **any marketplace URL**, or **a single-plugin repo**.
 

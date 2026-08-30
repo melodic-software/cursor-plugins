@@ -17,7 +17,10 @@ Policy: [`docs/PLUGIN-PHILOSOPHY.md`](../../../docs/PLUGIN-PHILOSOPHY.md).
 | Skills | https://cursor.com/docs/skills |
 | Skills (help) | https://cursor.com/help/customization/skills |
 | MCP | https://cursor.com/docs/mcp |
-| GitHub integration (Team Auto Refresh app) | https://cursor.com/docs/integrations/github |
+| GitHub App (required by Team Auto Refresh; Auto Refresh itself is on the plugins page) | https://cursor.com/docs/integrations/github |
+| Marketplace manifest JSON Schema (authority for entry fields) | https://raw.githubusercontent.com/cursor/plugins/main/schemas/marketplace.schema.json |
+| Plugin manifest JSON Schema (authority for plugin fields) | https://raw.githubusercontent.com/cursor/plugins/main/schemas/plugin.schema.json |
+| CLI slash commands (`/plugin marketplace add`) | https://cursor.com/docs/cli/reference/slash-commands |
 | Publish to Cursor Marketplace | https://cursor.com/marketplace/publish |
 | Plugin template | https://github.com/cursor/plugin-template |
 | Agent Skills open standard | https://agentskills.io |

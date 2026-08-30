@@ -33,6 +33,9 @@ Ports: [MIGRATION-PLAYBOOK.md](MIGRATION-PLAYBOOK.md).
 | Plugins overview (Team, install, local test) | https://cursor.com/docs/plugins | 2026-08-30 |
 | Plugins reference (manifests, discovery, marketplace.json, variables) | https://cursor.com/docs/reference/plugins | 2026-08-30 |
 | Plugin template | https://github.com/cursor/plugin-template | 2026-08-30 |
+| Marketplace manifest JSON Schema (authority; prose table is looser) | https://raw.githubusercontent.com/cursor/plugins/main/schemas/marketplace.schema.json | 2026-08-30 |
+| Plugin manifest JSON Schema (declares `category`, `tags`) | https://raw.githubusercontent.com/cursor/plugins/main/schemas/plugin.schema.json | 2026-08-30 |
+| CLI slash commands (`/plugin marketplace add`, user-scoped marketplaces) | https://cursor.com/docs/cli/reference/slash-commands | 2026-08-30 |
 | Publish to Cursor Marketplace | https://cursor.com/marketplace/publish | 2026-08-30 |
 | Agent Skills open standard | https://agentskills.io | 2026-08-30 |
 

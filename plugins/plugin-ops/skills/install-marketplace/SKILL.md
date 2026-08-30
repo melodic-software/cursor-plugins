@@ -1,6 +1,6 @@
 ---
 name: install-marketplace
-description: Install a Cursor plugin marketplace or plugin for the user's plan (Ultra/personal, Teams, Enterprise). Fetches official Cursor docs live, then guides /add-plugin, Team Dashboard import, or local sync.
+description: Install a Cursor plugin marketplace or plugin for the user's plan (Ultra/personal, Teams, Enterprise). Fetches official Cursor docs live, then guides /plugin marketplace add, Team Dashboard import, or local sync.
 ---
 
 # Install a Cursor marketplace / plugin (plan-aware)
@@ -16,13 +16,22 @@ Before any recommendation, fetch and skim:
 Use `plugins/plugin-ops/reference/DOC-SOURCES.md`. **Docs win** over this skill.
 Melodic policy: `docs/PLUGIN-PHILOSOPHY.md`.
 
-**Verified 2026-08-30.** The current docs describe exactly three install routes: the
-Cursor Marketplace via **Customize**, Team marketplaces via the Dashboard, and
-`~/.cursor/plugins/local`. They document **no** `/add-plugin` command and **no**
-personal (non-team) marketplace — neither term appears on
-https://cursor.com/docs/plugins, https://cursor.com/docs/reference/plugins,
-https://cursor.com/help/customization/plugins, or the docs sitemap. Re-fetch before
-offering either as a supported path.
+**Verified 2026-08-30.** The literal string `/add-plugin` does not appear anywhere in
+the current docs. A **user-scoped marketplace added by git URL** very much does — it
+just has a different command. From
+https://cursor.com/docs/cli/reference/slash-commands and
+https://cursor.com/docs/cli/changelog:
+
+- `/plugin marketplace add <git-url>` registers a marketplace; `/plugin` also browses
+  and manages marketplaces **by scope** and installs at user or project scope.
+- Non-interactively: `agent plugin marketplace add <git-url>`, with `--git-ref` to pin
+  a branch, tag, or commit; `list` (add `--format json`), `update` to re-index from
+  the repository, and `remove` for a **user-scoped** marketplace.
+- `--plugin-dir <path>` loads a local plugin directory.
+
+So `/add-plugin` is a **renamed** command, not a removed capability. Do not tell a user
+that personal, non-team marketplaces are undocumented — route them to
+`/plugin marketplace add` instead. Re-fetch both pages before advising.
 
 ## Clarify
 
@@ -35,9 +44,9 @@ offering either as a supported path.
 
 | Situation | Path to prefer (confirm against live docs) |
 | --- | --- |
-| Personal / Ultra / “just me” + easy UI | Documented route: **Customize** → find the plugin → **Install**, choosing project or user scope. `/add-plugin <github-url>` (a “personal marketplace”) appears in older write-ups but is absent from the current docs — do not present it as supported without a live fetch that shows it; offer `sync-local` as the reliable updater either way. |
+| Personal / Ultra / “just me”, third-party repo (this marketplace included) | `/plugin marketplace add <git-url>`, then install the plugins you want at user or project scope. Pin with `agent plugin marketplace add <git-url> --git-ref <ref>`; refresh with `/plugin marketplace update`. **Customize** browses what is already registered, so it will not find an unregistered third-party repo — register it first. `/add-plugin` is the old name for this; if the user reports it, they mean this route. |
 | Enterprise/Teams **admin** + share with org/group | Dashboard → **Plugins** → **Team Marketplaces** → **Add Marketplace** / Import from Repo. Set Marketplace Access + install modes per docs. |
-| Admin but **only myself** | Prefer a user-scoped install from **Customize**, or `sync-local`. Team Marketplace is org-scoped; restricting to a one-person Organization Group is possible but heavier. |
+| Admin but **only myself** | Prefer a user-scoped `/plugin marketplace add <git-url>`, or `sync-local`. Team Marketplace is org-scoped; restricting to a one-person Organization Group is possible but heavier. |
 | Teams/Enterprise **member** (not admin) | Install from Customize after admin added the marketplace; cannot import the repo yourself. |
 | Need disk-truth / stuck updates | `sync-local` with path or URL (real copies into `~/.cursor/plugins/local`). |
 | Official Cursor Marketplace listing | Publish flow at https://cursor.com/marketplace/publish — separate from Team/personal GitHub import. |

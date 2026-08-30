@@ -13,7 +13,7 @@ Melodic policy (skills primary; no new `commands/`):
 | Skill | Purpose |
 | --- | --- |
 | `/sync-local` | Copy plugin(s) from a path or git URL into `~/.cursor/plugins/local` |
-| `/install-marketplace` | Choose personal **Customize** install, Team Dashboard import, or local sync |
+| `/install-marketplace` | Choose `/plugin marketplace add`, Team Dashboard import, or local sync |
 | `/update-plugins` | Team Auto Refresh vs personal pin vs local re-sync |
 | `/verify-plugin` | Validate checkout against live Cursor docs + Melodic stances |
 
