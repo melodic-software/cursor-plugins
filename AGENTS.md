@@ -10,33 +10,44 @@ and the `scripts/sync-local.*` sync tooling. See `README.md` and
 
 ### Environment / dependencies
 
-- There is **no package manager and no build step**. The tools the repo's own scripts
-  need at runtime (`bash`, `git`, `python3`, `jq`) are all present in the base image, so
-  the startup update script is a no-op.
-- There **is** a test suite: `bash scripts/test-sync-local.sh`. See "Test" below.
-- The lint and test tooling is **not** all preinstalled. Probe with `command -v` and
-  install what is missing; never assume:
+- There is **no package manager and no application build**. Runtime tools the
+  repo's own scripts need (`bash`, `git`, `python3`, `jq`) are already in the
+  Cloud Agent base image.
+- Checking-toolchain provisioning for Cloud Agent **Builds** is
+  [`.cursor/install.sh`](.cursor/install.sh), invoked by
+  [`.cursor/environment.json`](.cursor/environment.json) (`install` only; no
+  `start` — this repo has no long-running service). Official contract:
+  [Cloud Environment Setup](https://cursor.com/docs/cloud-agent/setup) and
+  [Builds](https://cursor.com/docs/cloud-agent/builds). The script is
+  idempotent and installs `shellcheck`, optional PowerShell +
+  PSScriptAnalyzer (a PowerShell failure is tolerated — the `.sh` twin covers
+  Linux), and `ajv`/`ajv-formats` into `./node_modules`.
+- Just-in-time starts (no successful Build yet) still hit a stock base image.
+  Probe with `command -v` and install what is missing; never assume the
+  checking tools are present:
 
   | Tool | Needed for | If missing |
   | --- | --- | --- |
-  | `shellcheck` | linting `scripts/*.sh` | `sudo apt-get install -y shellcheck` |
+  | `shellcheck` | linting `scripts/*.sh` and `.cursor/install.sh` | `sudo apt-get install -y shellcheck` |
   | `pwsh` | running/testing `sync-local.ps1` | see the caveat below — the `.sh` twin covers Linux |
   | `PSScriptAnalyzer` | linting `sync-local.ps1` | `pwsh -c "Install-Module PSScriptAnalyzer -Scope CurrentUser -Force"` |
-  | `node` + `ajv` | validating manifests against Cursor's schemas | `npm install ajv@8 ajv-formats` |
+  | `node` + `ajv` | validating manifests and `.cursor/environment.json` against Cursor's schemas | `npm install ajv@8 ajv-formats` |
 
   Only `bash`, `git`, `python3` and `jq` are relied on at runtime; everything in that
   table is for checking the repo, not for using it.
+- There **is** a test suite: `bash scripts/test-sync-local.sh`. See "Test" below.
 
 ### Lint / validate (there is no configured linter — use these proxies)
 
-- Shell: prefer `shellcheck scripts/sync-local.sh` **whenever the tool is available**.
+- Shell: prefer `shellcheck scripts/sync-local.sh .cursor/install.sh` **whenever
+  the tool is available**.
   `bash -n` only *parses* — it exited clean over a path traversal, a silently swallowed
   failure, and a GNU-only `find` builtin that all had to be found and fixed by hand.
   `shellcheck` catches that class. It is packaged for Debian/Ubuntu, so if it is missing
   install it (`sudo apt-get install -y shellcheck`) when the network allows. Do **not**
   assume it is preinstalled: probe with `command -v shellcheck` first.
   Only if it can be neither found nor installed, fall back to
-  `bash -n scripts/sync-local.sh` as the floor — a syntax check, not a lint.
+  `bash -n scripts/sync-local.sh .cursor/install.sh` as the floor — a syntax check, not a lint.
   The default rule set must stay at zero findings; a repo-root `.shellcheckrc`, if
   present, records which *optional* checks were considered and deliberately declined.
 - JSON manifests: `jq empty .cursor-plugin/marketplace.json` and
@@ -50,7 +61,9 @@ and the `scripts/sync-local.*` sync tooling. See `README.md` and
   schemas, and its prose reference disagrees with them **in both directions** — the prose
   lists plugin-entry fields the schema forbids, and marks `owner` required where the
   schema does not. The schema wins. CI fetches both and runs
-  `node scripts/validate-manifests.mjs`; run it the same way locally.
+  `node scripts/validate-manifests.mjs`; run it the same way locally. CI also
+  fetches `https://cursor.com/schemas/environment.schema.json` and runs
+  `node scripts/validate-environment.mjs` against `.cursor/environment.json`.
 
 ### Test
 
@@ -103,12 +116,14 @@ and the `scripts/sync-local.*` sync tooling. See `README.md` and
 ### CI
 
 `.github/workflows/ci.yml` runs the checks above on every push and pull request: shell
-lint plus the regression suite, PSScriptAnalyzer, JSON and schema validation of the
-manifests, and internal markdown link integrity. It deliberately does **not** check
-external URLs — GitHub and cursor.directory answer CI runners with 403/429, which would
-fail the build for reasons that say nothing about the repository. Note that GitHub's
-runners preinstall `pwsh`, so CI exercises both twins even though a Cursor Cloud box may
-not.
+lint of `scripts/*.sh` **and** `.cursor/install.sh`, plus the regression suite,
+PSScriptAnalyzer, JSON and schema validation of the manifests and
+`.cursor/environment.json`, and internal markdown link integrity. It deliberately does
+**not** check external URLs — GitHub and cursor.directory answer CI runners with
+403/429, which would fail the build for reasons that say nothing about the repository.
+Note that GitHub's runners preinstall `pwsh`, so CI exercises both twins even though a
+just-in-time Cloud Agent box may not (`.cursor/install.sh` tries to add `pwsh` on
+Builds; a failure there is tolerated).
 
 The repo-root files synced from `melodic-software/standards` are not re-linted here; they
 are validated upstream, and this repo must not hand-edit them.
@@ -116,7 +131,8 @@ are validated upstream, and this repo must not hand-edit them.
 ### Non-obvious caveats
 
 - The PowerShell twin `scripts/sync-local.ps1` requires `pwsh` (PowerShell), which is
-  **not** installed in the base image. On Linux use the `.sh` variant; only the `.ps1`
+  **not** in the stock base image. `.cursor/install.sh` attempts to install it during
+  a Build and continues if that fails. On Linux use the `.sh` variant; only the `.ps1`
   path needs PowerShell.
 - The two scripts are twins in behavior but **not** in argument-error reporting: bash
   parses its own flags (exit 2, `Missing value for --ref` / `Unknown flag: <flag>`), while

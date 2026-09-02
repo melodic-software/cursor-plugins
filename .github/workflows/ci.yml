@@ -35,10 +35,10 @@ jobs:
         run: sudo apt-get update && sudo apt-get install -y shellcheck
 
       - name: shellcheck (must be zero findings)
-        run: shellcheck scripts/*.sh
+        run: shellcheck scripts/*.sh .cursor/install.sh
 
       - name: bash -n (syntax floor)
-        run: for f in scripts/*.sh; do bash -n "$f"; done
+        run: for f in scripts/*.sh .cursor/install.sh; do bash -n "$f"; done
 
       # pwsh is preinstalled on ubuntu-latest, so the suite exercises BOTH twins
       # here and asserts their output is byte-identical.
@@ -115,6 +115,11 @@ jobs:
           curl -fsS "$base/marketplace.schema.json" -o marketplace.schema.json
           curl -fsS "$base/plugin.schema.json" -o plugin.schema.json
           node scripts/validate-manifests.mjs
+          # Official environment.json contract (draft 2019-09). Linked from
+          # https://cursor.com/docs/cloud-agent/setup — same authority rule as
+          # the plugin schemas: fetch live, fail closed if the fetch fails.
+          curl -fsS https://cursor.com/schemas/environment.schema.json -o environment.schema.json
+          node scripts/validate-environment.mjs
 
   links:
     name: Docs (internal link integrity)
