@@ -72,16 +72,20 @@ lands in the decision record. Minimum set, skipping anything discovery already a
 ## Choose the lane
 
 Apply *Selection order* from `plugins/automations/reference/LANES.md` top-down and stop
-at the first fit. A managed agent (Bugbot, Security Agents, PR Routing & Approval) that
-covers the need ends the design; report its configuration page instead of a prompt. Write
-the lane and the reason it beat the alternatives into the record.
+at the first fit. Hard requirements come first: a consumer who *requires* deterministic
+surrounding steps, a `.github/workflows` definition, or orchestration from their own
+system gets `api-and-cli` before any trigger is considered. Next, a managed agent
+(Bugbot, Security Agents, PR Routing & Approval) that covers the need ends the design
+with the *managed-agent path* below instead of a prompt. Write the lane and the reason it
+beat the alternatives into the record.
 
 ## Design the spec
 
-Fill every field of the record header (`assets/automation-record.md`). Read each value
-from the fetched pages: trigger names exactly as the Automations page spells them, tool
-names as listed, permission scope semantics as described. Note plan gates you confirmed
-and the page you confirmed them on.
+Fill every field of the record header
+(`plugins/automations/skills/design-automation/assets/automation-record.md`). Read each
+value from the fetched pages: trigger names exactly as the Automations page spells them,
+tool names as listed, permission scope semantics as described. Note plan gates you
+confirmed and the page you confirmed them on.
 
 **Output capability check.** For every output the lane must produce, name the mechanism
 that produces it: a tool in the *Tools* section as fetched, an MCP server the consumer
@@ -92,7 +96,8 @@ it.
 
 ## Compose the prompt
 
-Structure, in this order:
+Skip this section on the managed-agent path. Otherwise, structure the prompt in this
+order:
 
 1. Role and goal (one paragraph).
 2. Inputs the run can rely on: trigger payload, repository, config keys and where they are
@@ -112,10 +117,13 @@ Prefer built-in skills and managed agents inside the prompt ("run `/review-bugbo
 
 ## Outputs
 
+### Automation path (every lane except `managed-agents`)
+
 Deliver all five, in this order:
 
-1. **Record** — `assets/automation-record.md` filled in, written to the location the
-   consumer chose. The prompt is the body; the header is the spec.
+1. **Record** — `plugins/automations/skills/design-automation/assets/automation-record.md`
+   filled in, written to the location the consumer chose. The prompt is the body; the
+   header is the spec.
 2. **Binding checklist** — each config key, its channel, who sets it, and the page that
    documents the channel.
 3. **UI paste checklist** — the fields to fill in the Automations UI with labels copied
@@ -125,6 +133,21 @@ Deliver all five, in this order:
    (run page, events, outputs), and how to roll back.
 5. **Gaps** — anything unverified (timed-out pages, staff statements relied on,
    undocumented behavior), each with the page or thread to re-check.
+
+### Managed-agent path (`managed-agents`)
+
+There is no prompt to write, paste, or bind. Deliver these four instead:
+
+1. **Record** — the same template with `lane: managed-agents`, `triggers` and `tools`
+   left as the managed agent's own (read from its page), and a body that states which
+   agent, why it covers the goal, and which repositories it should be enabled on. The
+   `last-pasted` field records when the configuration was applied.
+2. **Configuration checklist** — the settings to apply on the agent's configuration page
+   (labels copied from the fetched page), plus any repo-side policy files the page
+   documents and where they go.
+3. **First-run verification plan** — how to exercise it once (for example a test PR),
+   what to inspect, and how to disable it.
+4. **Gaps** — as above, including the plan gate confirmed for the agent.
 
 ## Do not
 

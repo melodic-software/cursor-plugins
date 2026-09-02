@@ -24,8 +24,8 @@ skills table on the live Skills page when it is not; neither plugin imports the 
 
 ## What the record is
 
-`skills/design-automation/assets/automation-record.md` is the template every designed
-automation is written into: a YAML header that is the spec (lane, triggers, scope,
+[`automation-record.md`](skills/design-automation/assets/automation-record.md) is the
+template every designed automation is written into: a YAML header that is the spec (lane, triggers, scope,
 identity, tools, config keys and their bindings, plan gates confirmed, docs date, last
 pasted) and a Markdown body that is the prompt. The repository copy is the source of
 truth; the Automations UI holds a paste of it. Where a consumer keeps records is their

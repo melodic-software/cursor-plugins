@@ -42,12 +42,15 @@ trigger source  ->  runtime  ->  outputs
 Apply top-down; stop at the first fit. Record the lane and the reason in the automation
 record.
 
-1. A **managed agent** covers the need.
-2. A **native trigger** exists for the event on the provider in use.
-3. No trigger, latency tolerant → **scheduled**.
-4. No trigger, latency matters → **webhook** fed by the system that already sees the
+1. **Hard requirements first.** If the consumer *requires* deterministic steps around the
+   agent, a definition that lives in `.github/workflows`, or orchestration from their own
+   system, the answer is **api-and-cli** regardless of what triggers exist. A preference
+   is not a requirement; ask which it is.
+2. A **managed agent** covers the need.
+3. A **native trigger** exists for the event on the provider in use.
+4. No trigger, latency tolerant → **scheduled**.
+5. No trigger, latency matters → **webhook** fed by the system that already sees the
    event. Justify the second system.
-5. Deterministic surrounding steps or file-based definition required → **api-and-cli**.
 6. Otherwise, or if a human should decide each time → **on-demand**, and no automation.
 
 Simplicity is a requirement, not a preference: a single schedule that reconciles state
@@ -152,8 +155,8 @@ runs is **not documented**; do not design a lane that depends on it.
 Automations are edited in the UI; there is no config-as-code or management API
 (Tier 3, 2026-06/08). Until that changes, the repository copy is the source of truth and
 the UI holds a paste of it. The record format is
-`skills/design-automation/assets/automation-record.md`; where consumers keep records is
-their choice, asked for and never assumed.
+[`automation-record.md`](../skills/design-automation/assets/automation-record.md); where
+consumers keep records is their choice, asked for and never assumed.
 
 Optional **pointer prompt**: the UI prompt is a stub that tells the agent to read the
 record from the checked-out repository. Only for repo-backed lanes; must read the
