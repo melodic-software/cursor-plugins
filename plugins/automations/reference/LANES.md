@@ -74,6 +74,15 @@ cannot pull additional repositories in at run time. Prefer single-repo for PR-tr
 lanes; choose a multi-repo environment only when the task itself spans repositories.
 Environment resolution order and environment-scoped secrets are on the Setup page.
 
+### Output capability
+
+The automation *Tools* section is the list of writes a run can perform natively; anything
+else needs an MCP server or a CLI capability verified in that runtime. Match every output
+to its mechanism before choosing a lane. Observed 2026-09-02: the listed tools cover pull
+requests, reviewers, Slack, MCP, Memories, and computer use — a lane whose output is, for
+example, a label on an issue has no native tool and must bring an MCP or move to another
+lane. Re-verify on the Automations page.
+
 ### Identity and permission scope
 
 Who the run acts as (comments, reviews, reviewer requests, PR author) depends on the

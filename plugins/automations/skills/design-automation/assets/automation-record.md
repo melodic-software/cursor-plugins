@@ -16,6 +16,11 @@ plan-gates-confirmed:
   - <feature: plan, confirmed on <URL>, <date>>
 tools:
   - <tool name as listed on the Automations page>
+outputs:
+  - output: <what the world sees>
+    mechanism: <listed tool | MCP server <name> | verified CLI capability>
+    verified-on: <URL or "first run">
+
 model: <model or "automation default">
 memories: <on | off> — <why>
 config-keys:

@@ -83,6 +83,13 @@ from the fetched pages: trigger names exactly as the Automations page spells the
 names as listed, permission scope semantics as described. Note plan gates you confirmed
 and the page you confirmed them on.
 
+**Output capability check.** For every output the lane must produce, name the mechanism
+that produces it: a tool in the *Tools* section as fetched, an MCP server the consumer
+has or will connect, or a CLI capability you verified in that runtime. An output with no
+mechanism makes the lane unviable as designed: move down the selection order, add the
+MCP, or narrow the output. Never assume a run can write to a system because it can read
+it.
+
 ## Compose the prompt
 
 Structure, in this order:
