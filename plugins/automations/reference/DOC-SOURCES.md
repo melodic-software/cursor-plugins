@@ -51,11 +51,12 @@ Column *Use for* says which question sends you to the page; it is not a summary 
 | What a run is, where it can be started from, MCP and hooks support summary, artifacts, sharing, billing | https://cursor.com/docs/cloud-agent | 2026-09-02 |
 | Computer use, artifacts, remote desktop, MCP transports, Cursor Cloud MCP tools, subscriptions, CI autofix, OIDC | https://cursor.com/docs/cloud-agent/capabilities | 2026-09-02 |
 | Environments, multi-repo environments, resolution order, install/start, `environment.json`, secrets, Docker/Tailscale/Cloudflare | https://cursor.com/docs/cloud-agent/setup | 2026-09-02 |
+| `environment.json` JSON Schema (authority for allowed keys; draft 2019-09) | https://cursor.com/schemas/environment.schema.json | 2026-09-02 |
 | Dashboard defaults, network modes, security toggles, team feature flags, team follow-ups | https://cursor.com/docs/cloud-agent/settings | 2026-09-02 |
 | Secret types (Environment Variable / Runtime / Build), egress allowlists, artifact upload host, retention | https://cursor.com/docs/cloud-agent/security-network | 2026-09-02 |
 | Rules levels a cloud agent reads (user, team, repo), skills and `AGENTS.md` guidance | https://cursor.com/docs/cloud-agent/best-practices | 2026-09-02 |
 | Run metadata readable from inside the VM (`agent/source`, `workspace/automation-id`, …) | https://cursor.com/docs/cloud-agent/metadata | 2026-09-02 |
-| Builds (prebuilt environments) | https://cursor.com/docs/cloud-agent/builds | listed in index; not fetched this session |
+| Builds (prebuilt environments) | https://cursor.com/docs/cloud-agent/builds | 2026-09-02 |
 | Security architecture overview | https://cursor.com/docs/cloud-agent/security | listed in index; not fetched this session |
 | OIDC identity tokens | https://cursor.com/docs/cloud-agent/identity | listed in index; not fetched this session |
 
@@ -110,7 +111,7 @@ Automations page.
 | Use for | URL | Verified |
 | --- | --- | --- |
 | Which individual plans include Cloud Agents, Bugbot, Automations; Teams vs Enterprise summary | https://cursor.com/docs/models-and-pricing | 2026-09-02 |
-| Teams pricing detail | https://cursor.com/docs/account/teams/pricing | request timed out twice on 2026-09-02 — unverified, not dead |
+| Teams pricing detail | https://cursor.com/docs/account/teams/pricing | 2026-09-02 |
 | Enterprise-only controls: model access, MCP allowlist, Protected Git Scopes, integrations | https://cursor.com/docs/enterprise/model-and-integration-management | 2026-09-02 |
 
 Plan gates also appear inline on feature pages (Jira, Plugins, Bugbot, Settings). Read
@@ -150,7 +151,8 @@ deliberately not specified yet.
 
 Every Tier 1 and Tier 2 row marked `2026-09-02` returned HTTP 200 with content that
 matched its *Use for* cell. Rows marked *listed in index* were taken from the Tier 0
-index and not opened. `https://cursor.com/docs/account/teams/pricing` timed out on two
-attempts: unverified, not evidence of a dead link. A timeout, 403, or 429 is a refusal to
-serve this client, not a statement about the resource; only a 404/410 from an
-unthrottled fetch is evidence of a dead link.
+index and not opened. `https://cursor.com/docs/account/teams/pricing` and
+`https://cursor.com/docs/cloud-agent/builds` were re-fetched this session (both
+HTTP 200; pricing had timed out earlier the same calendar day). A timeout, 403,
+or 429 is a refusal to serve this client, not a statement about the resource;
+only a 404/410 from an unthrottled fetch is evidence of a dead link.

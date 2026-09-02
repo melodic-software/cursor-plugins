@@ -9,7 +9,7 @@ Policy: [`docs/PLUGIN-PHILOSOPHY.md`](../../../docs/PLUGIN-PHILOSOPHY.md).
 
 | Topic | URL |
 | --- | --- |
-| Plugins overview (marketplaces, Team, local test, install) | https://cursor.com/docs/plugins |
+| Plugins overview (marketplaces, Team, local test, install, Agent Plugins vs Cursor Plugins) | https://cursor.com/docs/plugins |
 | Plugins reference (manifests, multi-plugin marketplaces, variables, commands format) | https://cursor.com/docs/reference/plugins |
 | Hooks | https://cursor.com/docs/hooks |
 | Third-party / Claude Code hooks | https://cursor.com/docs/reference/third-party-hooks |
@@ -25,6 +25,7 @@ Policy: [`docs/PLUGIN-PHILOSOPHY.md`](../../../docs/PLUGIN-PHILOSOPHY.md).
 | Publish to Cursor Marketplace | https://cursor.com/marketplace/publish |
 | Plugin template | https://github.com/cursor/plugin-template |
 | Agent Skills open standard | https://agentskills.io |
+| Agent Plugins open standard (root `plugin.json`; skills + MCP only) | https://agent-plugins.org |
 
 Optional community index (not official): https://cursor.directory
 
@@ -33,17 +34,24 @@ Do not treat Claude Code “commands merged into skills” as Cursor platform la
 without a live Cursor fetch that says the same — Melodic still prefers skills
 (see philosophy).
 
-## Fetch status, 2026-08-30
+## Fetch status, 2026-09-02
 
-Every URL above was fetched this session and returned HTTP 200 — **except** these
-two, which returned a transport-layer refusal through the agent proxy:
+Re-fetched this session and HTTP 200 with matching content:
+
+- https://cursor.com/docs/plugins
+- https://cursor.com/docs/reference/plugins
+- https://cursor.com/docs/skills
+- https://raw.githubusercontent.com/cursor/plugins/main/schemas/marketplace.schema.json
+- https://github.com/cursor/plugin-template (was HTTP 403 via proxy on 2026-08-30)
+- https://agent-plugins.org
+
+Still refused:
 
 | URL | Result | How to read it |
 | --- | --- | --- |
-| https://github.com/cursor/plugin-template | HTTP 403 | Anti-automation / bot response. **Not** evidence the repository is gone or renamed. Unverified this session; open it in a browser before relying on its contents. |
-| https://cursor.directory | HTTP 429 | Rate limit. **Not** evidence the site is gone. Unverified this session; it is a community index and never authoritative anyway. |
+| https://cursor.directory | HTTP 429 | Rate limit. **Not** evidence the site is gone. Unverified; it is a community index and never authoritative anyway. |
 
 A 403 or 429 is a refusal to serve *this client*, not a statement about the
 resource. Do not delete, re-date, or “fix” a row on one — only a 404/410 from an
-unthrottled fetch is evidence of a dead link. Re-check both by hand or from a
-different network before acting on them.
+unthrottled fetch is evidence of a dead link. Rows not listed above were not
+re-opened this session.
