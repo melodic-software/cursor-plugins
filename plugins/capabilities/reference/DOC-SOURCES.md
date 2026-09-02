@@ -79,7 +79,7 @@ Repo policy: [`docs/PLUGIN-PHILOSOPHY.md`](../../../docs/PLUGIN-PHILOSOPHY.md).
 | --- | --- | --- |
 | Which individual plans include Cloud Agents, Bugbot, Automations, plugins | https://cursor.com/docs/models-and-pricing | 2026-09-02 |
 | Enterprise-only controls (model access, MCP allowlist, Protected Git Scopes) | https://cursor.com/docs/enterprise/model-and-integration-management | 2026-09-02 |
-| Teams pricing detail | https://cursor.com/docs/account/teams/pricing | request timed out twice on 2026-09-02 — unverified, not dead |
+| Teams pricing detail | https://cursor.com/docs/account/teams/pricing | 2026-09-02 |
 
 Gates are also stated inline on feature pages; the feature page is authoritative for its
 own gate.
@@ -113,5 +113,7 @@ not specified yet.
 ## Fetch status, 2026-09-02
 
 Rows marked `2026-09-02` returned HTTP 200 with content matching their *Use for* cell.
-Rows marked *listed in index* were taken from the Tier 0 index and not opened. Two pages
-timed out (`subagents`, `account/teams/pricing`): unverified, not evidence of a dead link.
+Rows marked *listed in index* were taken from the Tier 0 index and not opened.
+`https://cursor.com/docs/account/teams/pricing` was re-fetched this session (HTTP
+200; it had timed out earlier the same calendar day).
+`https://cursor.com/docs/subagents` is still unverified (content fetch timed out).
