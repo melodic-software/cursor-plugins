@@ -33,6 +33,16 @@ docs/OFFICIAL-DOCS.md
 Skills are the primary surface (they appear in Agent `/`). Do not add new
 `commands/` — see philosophy.
 
+## Plugins
+
+| Plugin | Vertical | Skills |
+| --- | --- | --- |
+| [`plugin-ops`](plugins/plugin-ops/README.md) | Install, update, sync, verify plugins and marketplaces | `/install-marketplace`, `/update-plugins`, `/sync-local`, `/verify-plugin` |
+| [`automations`](plugins/automations/README.md) | Design Cursor Automations lane by lane; source-controlled prompt records | `/design-automation` |
+| [`capabilities`](plugins/capabilities/README.md) | Discover what the session can already do (built-ins, managed agents, plugins, MCP, integrations) | `/discover-capabilities` |
+
+Each plugin owns its own live-doc source index under `reference/`; none imports another.
+
 ## Install / update (all plans)
 
 Use **`plugin-ops`** skills (they fetch [Cursor docs](https://cursor.com/docs/plugins) live):
