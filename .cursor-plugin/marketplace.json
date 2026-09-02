@@ -6,7 +6,7 @@
   },
   "metadata": {
     "description": "Melodic Software Cursor plugin marketplace — Cursor-native skills, agents, rules, hooks, and MCP servers.",
-    "version": "0.2.0",
+    "version": "0.3.0",
     "pluginRoot": "plugins"
   },
   "plugins": [
@@ -14,6 +14,11 @@
       "name": "plugin-ops",
       "source": "plugin-ops",
       "description": "Plan-aware Cursor plugin/marketplace install, update, local sync, and verify — always fetch official Cursor docs live."
+    },
+    {
+      "name": "automations",
+      "source": "automations",
+      "description": "Design Cursor Automations lane by lane and record the prompt in source control — platform facts read from live official docs, never a cached copy."
     }
   ]
 }
