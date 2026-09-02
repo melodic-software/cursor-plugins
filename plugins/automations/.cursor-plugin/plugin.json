@@ -1,0 +1,28 @@
+{
+  "name": "automations",
+  "version": "0.1.0",
+  "description": "Design Cursor Automations lane by lane — trigger source, runtime, tools, identity, config seams, guardrails — and record the prompt in source control. Every platform fact is read from live official docs, never from a cached copy.",
+  "author": {
+    "name": "Melodic Software",
+    "email": "info@melodicsoftware.com"
+  },
+  "license": "MIT",
+  "keywords": [
+    "automations",
+    "cloud-agents",
+    "triggers",
+    "prompts",
+    "enterprise",
+    "teams",
+    "ultra"
+  ],
+  "category": "development",
+  "tags": [
+    "automations",
+    "cloud-agents",
+    "triggers",
+    "enterprise",
+    "teams",
+    "ultra"
+  ]
+}

@@ -48,6 +48,19 @@ Ports: [MIGRATION-PLAYBOOK.md](MIGRATION-PLAYBOOK.md).
 | GitHub App (required by Team Auto Refresh; Auto Refresh itself is documented on the plugins page) | https://cursor.com/docs/integrations/github | 2026-08-30 |
 | Test plugins locally (`~/.cursor/plugins/local`) | https://cursor.com/docs/plugins (Test plugins locally) | 2026-08-30 |
 
+## Automations, cloud agents, and capability discovery
+
+Those concerns have their own tiered source indexes, owned by the plugin that reads them
+(things that change together live together):
+
+| Concern | Index |
+| --- | --- |
+| Automations, cloud agent runtime, trigger sources, managed agents, programmatic lanes | [`plugins/automations/reference/DOC-SOURCES.md`](../plugins/automations/reference/DOC-SOURCES.md) |
+| Built-in skills, agent tools, plugins, MCP, integrations, plan gates | [`plugins/capabilities/reference/DOC-SOURCES.md`](../plugins/capabilities/reference/DOC-SOURCES.md) |
+
+Both start from the live page index https://cursor.com/docs/llms.txt (verified 2026-09-02),
+which is the self-healing root for every URL in this repository.
+
 Optional community index (not official): https://cursor.directory — **blocked**,
 HTTP 429 via proxy on 2026-08-30 (rate limit, not a dead link; see
 [DOC-SOURCES fetch status](../plugins/plugin-ops/reference/DOC-SOURCES.md#fetch-status-2026-08-30)).

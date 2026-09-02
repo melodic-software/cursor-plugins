@@ -75,9 +75,15 @@ and the `scripts/sync-local.*` sync tooling. See `README.md` and
   `plugins/plugin-ops/skills/sync-local/SKILL.md`. Example:
   `bash scripts/sync-local.sh . plugin-ops` (sync this repo's `plugin-ops` plugin).
 - `scripts/sync-local.sh` uses `python3` to parse `marketplace.json`; it is required for
-  any source that has a `.cursor-plugin/marketplace.json`, including when specific plugin
-  names are passed (the script resolves `metadata.pluginRoot` and each entry's `source`
-  with `python3` either way).
+ any source that has a `.cursor-plugin/marketplace.json`, including when specific plugin
+ names are passed (the script resolves `metadata.pluginRoot` and each entry's `source`
+ with `python3` either way).
+- The other plugins are skills only, no scripts: `plugins/automations` (design an
+ automation lane and write a source-controlled record) and `plugins/capabilities`
+ (inventory what a session can already do). Exercising them means running the skill in an
+ agent session; there is nothing to execute from a shell. Each keeps its own live-doc
+ index at `plugins/<name>/reference/DOC-SOURCES.md`, tiered by authority and dated by
+ live fetch under the same "Verified means fetched" rule as `docs/OFFICIAL-DOCS.md`.
 
 ### Doc conventions
 
