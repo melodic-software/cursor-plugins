@@ -5,7 +5,9 @@ Thumbs.db
 .env.*
 !.env.example
 node_modules/
-.cursor/
+.cursor/*
+!.cursor/environment.json
+!.cursor/install.sh
 .vscode/
 *.swp
 *~

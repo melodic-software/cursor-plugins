@@ -1,0 +1,4 @@
+{
+  "name": "cursor-plugins",
+  "install": "bash .cursor/install.sh"
+}
