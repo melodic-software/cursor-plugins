@@ -19,6 +19,11 @@
       "name": "automations",
       "source": "automations",
       "description": "Design Cursor Automations lane by lane and record the prompt in source control — platform facts read from live official docs, never a cached copy."
+    },
+    {
+      "name": "capabilities",
+      "source": "capabilities",
+      "description": "Discover what this Cursor session can already do — built-in skills, managed agents, installed plugins, MCP, integrations — on the current plan and surface, from live docs and the local machine."
     }
   ]
 }

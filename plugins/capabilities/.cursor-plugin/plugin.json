@@ -1,0 +1,30 @@
+{
+  "name": "capabilities",
+  "version": "0.1.0",
+  "description": "Discover what this Cursor session can already do — built-in skills, managed agents, installed plugins and skills, MCP servers, integrations — on the current plan and surface, and prefer composing native capabilities over writing new prompts. Read from live official docs and the local machine, never from a cached list.",
+  "author": {
+    "name": "Melodic Software",
+    "email": "info@melodicsoftware.com"
+  },
+  "license": "MIT",
+  "keywords": [
+    "capabilities",
+    "discovery",
+    "built-in-skills",
+    "plugins",
+    "mcp",
+    "inventory",
+    "enterprise",
+    "teams",
+    "ultra"
+  ],
+  "category": "development",
+  "tags": [
+    "capabilities",
+    "discovery",
+    "inventory",
+    "enterprise",
+    "teams",
+    "ultra"
+  ]
+}
