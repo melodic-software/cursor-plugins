@@ -20,7 +20,8 @@
 .PARAMETER Source
   Local path to a plugin or marketplace repo, or a git URL
   (https://github.com/org/repo[.git] or git@github.com:org/repo.git).
-  Default: parent of scripts/ (this marketplace repo).
+  Default: parent of scripts/ when that tree is a marketplace or plugin; else a
+  short known-checkout list; else https://github.com/melodic-software/cursor-plugins.
 
 .PARAMETER Plugin
   Optional plugin name(s) when Source is a marketplace. Default: all plugins
@@ -32,8 +33,12 @@
 .PARAMETER KeepClone
   When Source is a URL, keep the temp clone directory (printed at end).
 
+.PARAMETER NoUpdate
+  Skip fetch/fast-forward of a local git checkout. Default is to update a clean
+  tracking branch so a stale clone is not copied. Dry-run never updates.
+
 .PARAMETER DryRun
-  Print actions without writing.
+  Print actions without writing. Does not fetch or pull a local git source.
 #>
 [CmdletBinding()]
 [Diagnostics.CodeAnalysis.SuppressMessageAttribute(
@@ -47,6 +52,7 @@ param(
   [string[]] $Plugin,
   [string] $Ref = "",
   [switch] $KeepClone,
+  [switch] $NoUpdate,
   [switch] $DryRun
 )
 
@@ -214,6 +220,127 @@ function Resolve-PluginDirs {
   return $dirs
 }
 
+$MelodicMarketplaceUrl = "https://github.com/melodic-software/cursor-plugins"
+
+function Test-PluginLayout {
+  param([Parameter(Mandatory)][string] $Root)
+  return (
+    (Test-Path (Join-Path $Root ".cursor-plugin\marketplace.json")) -or
+    (Test-Path (Join-Path $Root ".cursor-plugin\plugin.json")) -or
+    (Test-Path (Join-Path $Root "plugins"))
+  )
+}
+
+function Get-KnownCheckoutPaths {
+  # Fixed candidate list. Test-Path only -- do not glob or walk $HOME,
+  # OneDrive, Documents, or AppData. Those walks hang for minutes on Windows.
+  $paths = New-Object System.Collections.Generic.List[string]
+  $add = {
+    param([string] $Candidate)
+    if ($Candidate -and -not $paths.Contains($Candidate)) { [void]$paths.Add($Candidate) }
+  }
+  if ($env:MELODIC_CURSOR_PLUGINS) { & $add $env:MELODIC_CURSOR_PLUGINS }
+  $homes = @()
+  if ($env:HOME) { $homes += $env:HOME }
+  if ($env:USERPROFILE) { $homes += $env:USERPROFILE }
+  foreach ($userHome in $homes) {
+    & $add (Join-Path $userHome "cursor-plugins")
+    & $add (Join-Path $userHome "repos\github.com\melodic-software\cursor-plugins")
+    & $add (Join-Path $userHome "src\github.com\melodic-software\cursor-plugins")
+  }
+  & $add "D:\repos\github.com\melodic-software\cursor-plugins"
+  & $add "C:\repos\github.com\melodic-software\cursor-plugins"
+  return $paths
+}
+
+function Resolve-ImplicitSource {
+  param([Parameter(Mandatory)][string] $ScriptDefault)
+  if (Test-PluginLayout $ScriptDefault) { return $ScriptDefault }
+  foreach ($candidate in Get-KnownCheckoutPaths) {
+    if ((Test-Path -LiteralPath $candidate) -and (Test-PluginLayout $candidate)) {
+      [Console]::Error.WriteLine("Using checkout: $candidate")
+      return $candidate
+    }
+  }
+  [Console]::Error.WriteLine("No local checkout found; cloning $MelodicMarketplaceUrl")
+  return $MelodicMarketplaceUrl
+}
+
+function Get-ShortHead {
+  param([Parameter(Mandatory)][string] $Root)
+  $head = git -C $Root rev-parse --short=7 HEAD 2>$null
+  if ($LASTEXITCODE -ne 0 -or [string]::IsNullOrWhiteSpace($head)) { return $null }
+  return ([string]$head).Trim()
+}
+
+function Invoke-LocalGitFastForward {
+  # Fast-forward a local git checkout so a stale clone does not get copied.
+  # After a successful --ff-only, update submodules (--init --recursive) so a
+  # changed gitlink does not leave the working tree at the old plugin commit.
+  # If that update fails, reset the superproject and degrade to current HEAD.
+  # Never prompted (GIT_TERMINAL_PROMPT=0). Failures degrade to syncing HEAD.
+  # Prints one stdout line so both twins stay byte-identical.
+  param([Parameter(Mandatory)][string] $Root)
+  if (-not (Test-Path (Join-Path $Root ".git"))) { return }
+
+  $head = Get-ShortHead $Root
+  if (-not $head) { return }
+
+  $porcelain = git -C $Root status --porcelain 2>$null
+  if ($LASTEXITCODE -eq 0 -and $porcelain) {
+    Write-Host "Local checkout is dirty; syncing the working tree at $head without pulling"
+    return
+  }
+
+  git -C $Root rev-parse --abbrev-ref --symbolic-full-name '@{u}' 2>$null | Out-Null
+  if ($LASTEXITCODE -ne 0) {
+    Write-Host "Local checkout has no upstream; syncing current HEAD $head"
+    return
+  }
+
+  $previousPrompt = $env:GIT_TERMINAL_PROMPT
+  $env:GIT_TERMINAL_PROMPT = "0"
+  try {
+    git -C $Root fetch --quiet 2>$null | Out-Null
+    if ($LASTEXITCODE -ne 0) {
+      Write-Host "Could not fetch; syncing current HEAD $head"
+      return
+    }
+
+    $upstream = git -C $Root rev-parse --short=7 '@{u}' 2>$null
+    if ($LASTEXITCODE -eq 0 -and -not [string]::IsNullOrWhiteSpace($upstream) -and
+        ([string]$upstream).Trim() -eq $head) {
+      Write-Host "Local checkout already up to date ($head)"
+      return
+    }
+
+    $fullHead = git -C $Root rev-parse HEAD 2>$null
+    git -C $Root merge --ff-only --no-edit '@{u}' 2>$null | Out-Null
+    if ($LASTEXITCODE -eq 0) {
+      git -C $Root submodule update --init --recursive 2>$null | Out-Null
+      if ($LASTEXITCODE -eq 0) {
+        Write-Host "Fast-forwarded $head..$(Get-ShortHead $Root)"
+        return
+      }
+      # Superproject moved but checked-out submodules did not. Roll back so we
+      # do not copy a dirty half-updated tree, and so the next run can retry.
+      if (-not [string]::IsNullOrWhiteSpace($fullHead)) {
+        git -C $Root reset --hard $fullHead 2>$null | Out-Null
+        git -C $Root submodule update --init --recursive 2>$null | Out-Null
+      }
+      Write-Host "Could not fast-forward; syncing current HEAD $head"
+      return
+    }
+    Write-Host "Could not fast-forward; syncing current HEAD $head"
+  } finally {
+    if ($null -eq $previousPrompt) {
+      Remove-Item Env:GIT_TERMINAL_PROMPT -ErrorAction SilentlyContinue
+    } else {
+      $env:GIT_TERMINAL_PROMPT = $previousPrompt
+    }
+  }
+}
+
 function Copy-PluginReal {
   param(
     [Parameter(Mandatory)][string] $Src,
@@ -240,7 +367,7 @@ function Copy-PluginReal {
 }
 
 $scriptRepoDefault = Resolve-Path (Join-Path $PSScriptRoot "..")
-if (-not $Source) { $Source = [string]$scriptRepoDefault }
+if (-not $Source) { $Source = Resolve-ImplicitSource -ScriptDefault ([string]$scriptRepoDefault) }
 
 $tempClone = $null
 $workRoot = $null
@@ -258,8 +385,14 @@ try {
     if ($LASTEXITCODE -ne 0) { throw "git clone failed (exit $LASTEXITCODE)" }
     $workRoot = $tempClone
   } else {
-    if (-not (Test-Path $Source)) { throw "Source path not found: $Source" }
+    if (-not (Test-Path $Source)) {
+      [Console]::Error.WriteLine("If you do not have a checkout, pass a git URL (for this marketplace: $MelodicMarketplaceUrl).")
+      throw "Source path not found: $Source"
+    }
     $workRoot = (Resolve-Path $Source).Path
+    if (-not $DryRun -and -not $NoUpdate) {
+      Invoke-LocalGitFastForward -Root $workRoot
+    }
   }
 
   $localRoot = Get-LocalPluginsRoot

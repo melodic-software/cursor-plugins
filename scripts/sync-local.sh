@@ -1,16 +1,20 @@
 #!/usr/bin/env bash
 # Copy Cursor plugin(s) into ~/.cursor/plugins/local (real copies).
 # Usage:
-#   scripts/sync-local.sh [--dry-run] [--ref REF] [--keep-clone] [source] [plugin-name ...]
+#   scripts/sync-local.sh [--dry-run] [--no-update] [--ref REF] [--keep-clone] [source] [plugin-name ...]
 # Flags are position-independent: the parser accepts them before, between or after
 # the positional arguments. The first non-flag argument is the source; every later
 # non-flag argument is a plugin name.
-# source: local path or git URL (default: this repo).
+# source: local path or git URL (default: this repo, then known checkouts, then
+# the Melodic marketplace URL). A local git checkout is fast-forwarded unless
+# --no-update or --dry-run.
 set -euo pipefail
 
 repo_default="$(cd "$(dirname "$0")/.." && pwd)"
+melodic_marketplace_url="https://github.com/melodic-software/cursor-plugins"
 dry_run=0
 keep_clone=0
+no_update=0
 ref=""
 source=""
 plugins=()
@@ -19,6 +23,7 @@ while [[ $# -gt 0 ]]; do
   case "$1" in
     --dry-run) dry_run=1; shift ;;
     --keep-clone) keep_clone=1; shift ;;
+    --no-update) no_update=1; shift ;;
     --ref)
       if [[ $# -lt 2 ]]; then
         echo "Missing value for --ref" >&2
@@ -46,7 +51,112 @@ while [[ $# -gt 0 ]]; do
   esac
 done
 
-[[ -n "$source" ]] || source="$repo_default"
+# True when $1 looks like a Cursor plugin or marketplace root. Used only for
+# implicit source discovery -- never as a recursive search predicate.
+has_plugin_layout() {
+  [[ -f "$1/.cursor-plugin/marketplace.json" || -f "$1/.cursor-plugin/plugin.json" || -d "$1/plugins" ]]
+}
+
+# Fixed candidate list. Test each with `[ -d ]` only -- do not glob or walk
+# $HOME, OneDrive, Documents, or AppData. Those walks hang for minutes on Windows.
+known_checkout_paths() {
+  local seen="|"
+  emit_known() {
+    local p="$1"
+    [[ -n "$p" ]] || return 0
+    case "$seen" in
+      *"|$p|"*) return 0 ;;
+    esac
+    seen="$seen$p|"
+    printf '%s\n' "$p"
+  }
+  emit_known "${MELODIC_CURSOR_PLUGINS:-}"
+  if [[ -n "${HOME:-}" ]]; then
+    emit_known "$HOME/cursor-plugins"
+    emit_known "$HOME/repos/github.com/melodic-software/cursor-plugins"
+    emit_known "$HOME/src/github.com/melodic-software/cursor-plugins"
+  fi
+  if [[ -n "${USERPROFILE:-}" ]]; then
+    emit_known "$USERPROFILE/cursor-plugins"
+    emit_known "$USERPROFILE/repos/github.com/melodic-software/cursor-plugins"
+    emit_known "$USERPROFILE/src/github.com/melodic-software/cursor-plugins"
+  fi
+  emit_known "D:/repos/github.com/melodic-software/cursor-plugins"
+  emit_known "C:/repos/github.com/melodic-software/cursor-plugins"
+}
+
+# When the caller omitted a source: this script's repo if it is a marketplace
+# or plugin, else a known checkout path, else the official Melodic URL (clone).
+resolve_implicit_source() {
+  if has_plugin_layout "$repo_default"; then
+    printf '%s\n' "$repo_default"
+    return 0
+  fi
+  local p
+  while IFS= read -r p; do
+    if [[ -d "$p" ]] && has_plugin_layout "$p"; then
+      echo "Using checkout: $p" >&2
+      printf '%s\n' "$p"
+      return 0
+    fi
+  done < <(known_checkout_paths)
+  echo "No local checkout found; cloning $melodic_marketplace_url" >&2
+  printf '%s\n' "$melodic_marketplace_url"
+}
+
+# Fast-forward a local git checkout so a stale clone does not get copied.
+# After a successful --ff-only, update submodules (--init --recursive) so a
+# changed gitlink does not leave the working tree at the old plugin commit.
+# If that update fails, reset the superproject and degrade to current HEAD.
+# Never prompted (GIT_TERMINAL_PROMPT=0). Failures degrade to "sync current HEAD".
+# Prints one stdout line so both twins stay byte-identical. Dry-run and
+# --no-update skip this entirely (a dry run must not mutate the source).
+update_local_git() {
+  local root="$1"
+  if [[ ! -e "$root/.git" ]]; then
+    return 0
+  fi
+  local head
+  head="$(git -C "$root" rev-parse --short=7 HEAD 2>/dev/null || true)"
+  if [[ -z "$head" ]]; then
+    return 0
+  fi
+  if [[ -n "$(git -C "$root" status --porcelain 2>/dev/null || true)" ]]; then
+    echo "Local checkout is dirty; syncing the working tree at $head without pulling"
+    return 0
+  fi
+  if ! git -C "$root" rev-parse --abbrev-ref --symbolic-full-name '@{u}' >/dev/null 2>&1; then
+    echo "Local checkout has no upstream; syncing current HEAD $head"
+    return 0
+  fi
+  if ! GIT_TERMINAL_PROMPT=0 git -C "$root" fetch --quiet 2>/dev/null; then
+    echo "Could not fetch; syncing current HEAD $head"
+    return 0
+  fi
+  local remote_head
+  remote_head="$(git -C "$root" rev-parse --short=7 '@{u}' 2>/dev/null || true)"
+  if [[ -n "$remote_head" && "$remote_head" == "$head" ]]; then
+    echo "Local checkout already up to date ($head)"
+    return 0
+  fi
+  local full_head
+  full_head="$(git -C "$root" rev-parse HEAD 2>/dev/null || true)"
+  if GIT_TERMINAL_PROMPT=0 git -C "$root" merge --ff-only --no-edit '@{u}' >/dev/null 2>&1; then
+    if GIT_TERMINAL_PROMPT=0 git -C "$root" submodule update --init --recursive >/dev/null 2>&1; then
+      echo "Fast-forwarded $head..$(git -C "$root" rev-parse --short=7 HEAD)"
+      return 0
+    fi
+    # Superproject moved but checked-out submodules did not. Roll back so we
+    # do not copy a dirty half-updated tree, and so the next run can retry.
+    GIT_TERMINAL_PROMPT=0 git -C "$root" reset --hard "$full_head" >/dev/null 2>&1 || true
+    GIT_TERMINAL_PROMPT=0 git -C "$root" submodule update --init --recursive >/dev/null 2>&1 || true
+    echo "Could not fast-forward; syncing current HEAD $head"
+    return 0
+  fi
+  echo "Could not fast-forward; syncing current HEAD $head"
+}
+
+[[ -n "$source" ]] || source="$(resolve_implicit_source)"
 
 local_root="${HOME}/.cursor/plugins/local"
 
@@ -119,9 +229,13 @@ if is_git_url "$source"; then
 else
   if [[ ! -d "$source" ]]; then
     echo "Source path not found: $source" >&2
+    echo "If you do not have a checkout, pass a git URL (for this marketplace: $melodic_marketplace_url)." >&2
     exit 1
   fi
   work_root="$(cd "$source" && pwd)"
+  if [[ "$dry_run" -eq 0 && "$no_update" -eq 0 ]]; then
+    update_local_git "$work_root"
+  fi
 fi
 
 mkdir -p "$local_root"

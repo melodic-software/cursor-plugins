@@ -15,6 +15,11 @@
 # Exit:  0 all assertions passed, 1 otherwise.
 set -euo pipefail
 
+# Git 2.37+ background maintenance can drop objects/maintenance.lock while
+# `git clone --bare` is copying objects. That race aborted this suite on a
+# GitHub runner: failed to copy file to '.../origin.git/objects/maintenance.lock'.
+export GIT_OPTIONAL_LOCKS=0
+
 repo_root="$(cd "$(dirname "$0")/.." && pwd)"
 sh_script="$repo_root/scripts/sync-local.sh"
 ps_script="$repo_root/scripts/sync-local.ps1"
@@ -230,12 +235,230 @@ o="$work/c.dry"; run_sh "$h" "$o" --dry-run "$f_ok" || true
 assert_contains "a dry run says it would sync" "$o" 'Would sync'
 assert_absent   "a dry run never claims it synced" "$o" 'Synced ('
 
+o="$work/c.missing"; run_sh "$h" "$o" --dry-run "$work/does-not-exist" || true
+assert_contains "missing source still names the path" "$o.err" 'Source path not found:'
+assert_contains "missing source hints at the marketplace URL" "$o.err" 'https://github.com/melodic-software/cursor-plugins'
+
 # --ref with no value is bash-only: pwsh's parameter binder owns that path.
 rc=0; run_sh "$h" "$work/c.ref" --dry-run "$f_ok" --ref || rc=$?
 if [[ "$rc" -eq 2 ]]; then ok "--ref with no value exits 2"; else
   not_ok "--ref with no value" "expected exit 2, got $rc"
 fi
 assert_contains "--ref with no value explains itself" "$work/c.ref.err" 'Missing value for --ref'
+
+# --- implicit source (no path / URL given) ------------------------------------
+
+printf 'implicit source\n'
+assert_twins implicit-default 0 --dry-run -- -DryRun
+
+# --- local git update ---------------------------------------------------------
+
+# These cases mutate the source, so each twin gets its own clone of the same
+# origin. assert_twins cannot share one behind-checkout: the first twin would
+# fast-forward it and the second would print "already up to date".
+
+git_ident() { git -c user.name=sync-local-test -c user.email=sync-local-test@example.com "$@"; }
+
+# Disable signing and auto-maintenance on a fixture repo so ephemeral clones
+# do not race git's objects/maintenance.lock (see GIT_OPTIONAL_LOCKS above).
+quiet_test_git() {
+  git -C "$1" config commit.gpgsign false
+  git -C "$1" config maintenance.auto false
+  git -C "$1" config gc.auto 0
+}
+
+printf 'local git update\n'
+g="$work/gitfx"
+mkdir -p "$g"
+seed="$g/seed"
+git_ident init -b main "$seed" >/dev/null
+quiet_test_git "$seed"
+mkplugin "$seed" solo
+printf 'old\n' >"$seed/MARKER"
+git_ident -C "$seed" add -A
+git_ident -C "$seed" commit -m seed >/dev/null 2>&1
+git -c maintenance.auto=false -c gc.auto=0 clone --bare --quiet "$seed" "$g/origin.git"
+git -C "$seed" remote add origin "$g/origin.git"
+git_ident -C "$seed" push -u origin main >/dev/null 2>&1
+printf 'new\n' >"$seed/MARKER"
+git_ident -C "$seed" add MARKER
+git_ident -C "$seed" commit -m new >/dev/null 2>&1
+git_ident -C "$seed" push origin main >/dev/null 2>&1
+
+clone_from_old() {
+  # Clone the origin, then reset to the first commit so we are one behind.
+  git -c maintenance.auto=false -c gc.auto=0 clone --quiet "$g/origin.git" "$1"
+  quiet_test_git "$1"
+  git -C "$1" reset --hard HEAD~1 >/dev/null
+}
+
+# Fast-forward + copy the new marker
+clone_from_old "$work/behind.sh"
+clone_from_old "$work/behind.ps"
+h1="$work/h.git-ff.sh"; h2="$work/h.git-ff.ps"
+mkdir -p "$h1" "$h2"
+o1="$work/o.git-ff.sh"; o2="$work/o.git-ff.ps"
+rc1=0; run_sh "$h1" "$o1" "$work/behind.sh" || rc1=$?
+if [[ "$rc1" -eq 0 ]]; then ok "git-ff (sh exit 0)"; else
+  not_ok "git-ff (sh exit)" "expected 0, got $rc1" "$(head -5 "$o1" "$o1.err" 2>/dev/null)"
+fi
+if grep -qE '^Fast-forwarded [0-9a-f]{7}\.\.[0-9a-f]{7}$' "$o1"; then
+  ok "git-ff (sh announces fast-forward)"
+else
+  not_ok "git-ff (sh announces fast-forward)" "got: $(head -3 "$o1")"
+fi
+if [[ "$(cat "$h1/.cursor/plugins/local/solo/MARKER" 2>/dev/null)" == "new" ]]; then
+  ok "git-ff (sh copied updated marker)"
+else
+  not_ok "git-ff (sh copied updated marker)" "marker=$(cat "$h1/.cursor/plugins/local/solo/MARKER" 2>/dev/null)"
+fi
+if [[ "$have_pwsh" -eq 1 ]]; then
+  rc2=0; run_ps "$h2" "$o2" -Source "$work/behind.ps" || rc2=$?
+  if [[ "$rc2" -eq 0 ]]; then ok "git-ff (ps1 exit 0)"; else
+    not_ok "git-ff (ps1 exit)" "expected 0, got $rc2" "$(head -5 "$o2" "$o2.err" 2>/dev/null)"
+  fi
+  if diff <(sed -e "s|$h1|<HOME>|g" -e "s|$work/behind.sh|<SRC>|g" "$o1") \
+          <(sed -e "s|$h2|<HOME>|g" -e "s|$work/behind.ps|<SRC>|g" "$o2") \
+          >"$work/d.git-ff" 2>&1; then
+    ok "git-ff (twins byte-identical after path normalize)"
+  else
+    not_ok "git-ff (twin parity)" "$(head -8 "$work/d.git-ff")"
+  fi
+else
+  skip=$((skip + 1)); printf '  skip %s (pwsh not installed)\n' "git-ff"
+fi
+
+# Fast-forward a marketplace whose plugin lives in a submodule. The
+# superproject gitlink advances; without `submodule update` the working
+# tree stays on the old plugin commit (git status: `M plugins/sub`).
+subseed="$g/subseed"
+git_ident init -b main "$subseed" >/dev/null
+quiet_test_git "$subseed"
+mkplugin "$subseed" solo
+printf 'old\n' >"$subseed/MARKER"
+git_ident -C "$subseed" add -A
+git_ident -C "$subseed" commit -m 'sub seed' >/dev/null 2>&1
+git -c maintenance.auto=false -c gc.auto=0 clone --bare --quiet "$subseed" "$g/sub.origin.git"
+git -C "$subseed" remote add origin "$g/sub.origin.git"
+git_ident -C "$subseed" push -u origin main >/dev/null 2>&1
+
+superseed="$g/superseed"
+git_ident init -b main "$superseed" >/dev/null
+quiet_test_git "$superseed"
+git -C "$superseed" config protocol.file.allow always
+mkmarket "$superseed" '{"name":"solo","source":"sub"}'
+git -C "$superseed" -c protocol.file.allow=always submodule add "$g/sub.origin.git" plugins/sub >/dev/null 2>&1
+git_ident -C "$superseed" add -A
+git_ident -C "$superseed" commit -m 'super seed' >/dev/null 2>&1
+git -c maintenance.auto=false -c gc.auto=0 clone --bare --quiet "$superseed" "$g/super.origin.git"
+git -C "$superseed" remote add origin "$g/super.origin.git"
+git_ident -C "$superseed" push -u origin main >/dev/null 2>&1
+
+printf 'new\n' >"$subseed/MARKER"
+git_ident -C "$subseed" add MARKER
+git_ident -C "$subseed" commit -m 'sub new' >/dev/null 2>&1
+git_ident -C "$subseed" push origin main >/dev/null 2>&1
+git -C "$superseed/plugins/sub" pull --ff-only --quiet
+git -C "$superseed" add plugins/sub
+git_ident -C "$superseed" commit -m 'bump sub' >/dev/null 2>&1
+git_ident -C "$superseed" push origin main >/dev/null 2>&1
+
+clone_super_from_old() {
+  git -c maintenance.auto=false -c gc.auto=0 clone --quiet "$g/super.origin.git" "$1"
+  quiet_test_git "$1"
+  git -C "$1" config protocol.file.allow always
+  git -C "$1" reset --hard HEAD~1 >/dev/null
+  git -C "$1" -c protocol.file.allow=always submodule update --init --recursive >/dev/null
+}
+
+clone_super_from_old "$work/behind-sub.sh"
+clone_super_from_old "$work/behind-sub.ps"
+h1="$work/h.git-ff-sub.sh"; h2="$work/h.git-ff-sub.ps"
+mkdir -p "$h1" "$h2"
+o1="$work/o.git-ff-sub.sh"; o2="$work/o.git-ff-sub.ps"
+rc1=0; run_sh "$h1" "$o1" "$work/behind-sub.sh" || rc1=$?
+if [[ "$rc1" -eq 0 ]]; then ok "git-ff-submodule (sh exit 0)"; else
+  not_ok "git-ff-submodule (sh exit)" "expected 0, got $rc1" "$(head -5 "$o1" "$o1.err" 2>/dev/null)"
+fi
+if grep -qE '^Fast-forwarded [0-9a-f]{7}\.\.[0-9a-f]{7}$' "$o1"; then
+  ok "git-ff-submodule (sh announces fast-forward)"
+else
+  not_ok "git-ff-submodule (sh announces fast-forward)" "got: $(head -3 "$o1")"
+fi
+if [[ "$(cat "$h1/.cursor/plugins/local/solo/MARKER" 2>/dev/null)" == "new" ]]; then
+  ok "git-ff-submodule (sh copied updated submodule marker)"
+else
+  not_ok "git-ff-submodule (sh copied updated submodule marker)" \
+    "marker=$(cat "$h1/.cursor/plugins/local/solo/MARKER" 2>/dev/null)"
+fi
+if [[ -z "$(git -C "$work/behind-sub.sh" status --porcelain 2>/dev/null)" ]]; then
+  ok "git-ff-submodule (sh leaves a clean superproject)"
+else
+  not_ok "git-ff-submodule (sh leaves a clean superproject)" \
+    "status=$(git -C "$work/behind-sub.sh" status --porcelain)"
+fi
+if [[ "$have_pwsh" -eq 1 ]]; then
+  rc2=0; run_ps "$h2" "$o2" -Source "$work/behind-sub.ps" || rc2=$?
+  if [[ "$rc2" -eq 0 ]]; then ok "git-ff-submodule (ps1 exit 0)"; else
+    not_ok "git-ff-submodule (ps1 exit)" "expected 0, got $rc2" "$(head -5 "$o2" "$o2.err" 2>/dev/null)"
+  fi
+  if [[ "$(cat "$h2/.cursor/plugins/local/solo/MARKER" 2>/dev/null)" == "new" ]]; then
+    ok "git-ff-submodule (ps1 copied updated submodule marker)"
+  else
+    not_ok "git-ff-submodule (ps1 copied updated submodule marker)" \
+      "marker=$(cat "$h2/.cursor/plugins/local/solo/MARKER" 2>/dev/null)"
+  fi
+  if diff <(sed -e "s|$h1|<HOME>|g" -e "s|$work/behind-sub.sh|<SRC>|g" "$o1") \
+          <(sed -e "s|$h2|<HOME>|g" -e "s|$work/behind-sub.ps|<SRC>|g" "$o2") \
+          >"$work/d.git-ff-sub" 2>&1; then
+    ok "git-ff-submodule (twins byte-identical after path normalize)"
+  else
+    not_ok "git-ff-submodule (twin parity)" "$(head -8 "$work/d.git-ff-sub")"
+  fi
+else
+  skip=$((skip + 1)); printf '  skip %s (pwsh not installed)\n' "git-ff-submodule"
+fi
+
+# Dirty checkout: do not pull, copy the old marker
+clone_from_old "$work/dirty.sh"
+clone_from_old "$work/dirty.ps"
+printf 'wip\n' >"$work/dirty.sh/WIP"
+printf 'wip\n' >"$work/dirty.ps/WIP"
+h="$work/h.git-dirty"; mkdir -p "$h"
+o="$work/o.git-dirty"
+run_sh "$h" "$o" "$work/dirty.sh" || true
+assert_contains "dirty checkout announces itself" "$o" "without pulling"
+if [[ "$(cat "$h/.cursor/plugins/local/solo/MARKER" 2>/dev/null)" == "old" ]]; then
+  ok "dirty checkout is not fast-forwarded"
+else
+  not_ok "dirty checkout is not fast-forwarded" "marker=$(cat "$h/.cursor/plugins/local/solo/MARKER" 2>/dev/null)"
+fi
+
+# --no-update: stay behind
+clone_from_old "$work/noup.sh"
+h="$work/h.git-noup"; mkdir -p "$h"
+o="$work/o.git-noup"
+run_sh "$h" "$o" --no-update "$work/noup.sh" || true
+assert_absent " --no-update does not fast-forward" "$o" "Fast-forwarded"
+if [[ "$(cat "$h/.cursor/plugins/local/solo/MARKER" 2>/dev/null)" == "old" ]]; then
+  ok "--no-update copies the current (stale) tree"
+else
+  not_ok "--no-update copies the current (stale) tree" "marker=$(cat "$h/.cursor/plugins/local/solo/MARKER" 2>/dev/null)"
+fi
+
+# Dry-run of a behind checkout must not mutate it
+clone_from_old "$work/drybehind"
+old_head="$(git -C "$work/drybehind" rev-parse HEAD)"
+h="$work/h.git-dry"; mkdir -p "$h"
+run_sh "$h" "$work/o.git-dry" --dry-run "$work/drybehind" || true
+new_head="$(git -C "$work/drybehind" rev-parse HEAD)"
+if [[ "$old_head" == "$new_head" ]]; then
+  ok "dry-run does not fast-forward the source"
+else
+  not_ok "dry-run does not fast-forward the source" "HEAD moved $old_head -> $new_head"
+fi
+assert_absent "dry-run of a git source prints no update line" "$work/o.git-dry" "Fast-forwarded"
+assert_absent "dry-run of a git source does not claim up to date" "$work/o.git-dry" "already up to date"
 
 # --- real (non-dry) sync: the destination must be a real directory ------------
 

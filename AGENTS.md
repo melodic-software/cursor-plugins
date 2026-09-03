@@ -78,8 +78,11 @@ and the `scripts/sync-local.*` sync tooling. See `README.md` and
   found the hard way: path traversal via a plugin `name` and via an entry `source`, a
   `pluginRoot` that escapes the repo, an empty `plugins/` and `"plugins": []` (which used
   to exit 0 printing `Synced (0)`), a nameless marketplace entry (which used to dump a
-  Python traceback), prefix-name sort order, and a symlinked plugin directory (which must
-  install as a **real** directory, not a link).
+  Python traceback), prefix-name sort order, a symlinked plugin directory (which must
+  install as a **real** directory, not a link), implicit source (no path/URL), and
+  local-git update (fast-forward a behind checkout, leave a dirty tree and a
+  `--no-update` / `--dry-run` run behind, and update a submodule gitlink after
+  fast-forward).
 
 ### Run (the "application")
 
