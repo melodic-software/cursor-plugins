@@ -24,14 +24,18 @@ separate `commands/` layer.
 
 `scripts/sync-local.ps1` and `scripts/sync-local.sh` copy plugin(s) into
 `~/.cursor/plugins/local/<name>/` as **real directory copies**. The source is
-**optional** — both twins default to the repo containing the script, so a bare
-invocation syncs this marketplace.
+**optional** — both twins default to the repo containing the script if it is a
+marketplace or plugin, then a short known-checkout list (no home-directory
+walk), then they clone `https://github.com/melodic-software/cursor-plugins`.
+A local git checkout is fetched and fast-forwarded when the tree is clean and
+has an upstream, then copied in the same run.
 
 | Behavior | PowerShell | Bash |
 | --- | --- | --- |
 | Source (local path or git URL) | `-Source <path-or-url>` | first positional argument |
 | Plugin subset (marketplace sources) | `-Plugin a,b` | trailing positional arguments |
 | Git ref for URL sources | `-Ref <branch\|tag\|sha>` | `--ref <branch\|tag\|sha>` |
+| Skip fetch/fast-forward of a local git checkout | `-NoUpdate` | `--no-update` |
 | Print actions, write nothing | `-DryRun` | `--dry-run` |
 | Keep the temp clone of a URL source (path printed at the end) | `-KeepClone` | `--keep-clone` |
 

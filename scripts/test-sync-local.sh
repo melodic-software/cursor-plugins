@@ -230,12 +230,131 @@ o="$work/c.dry"; run_sh "$h" "$o" --dry-run "$f_ok" || true
 assert_contains "a dry run says it would sync" "$o" 'Would sync'
 assert_absent   "a dry run never claims it synced" "$o" 'Synced ('
 
+o="$work/c.missing"; run_sh "$h" "$o" --dry-run "$work/does-not-exist" || true
+assert_contains "missing source still names the path" "$o.err" 'Source path not found:'
+assert_contains "missing source hints at the marketplace URL" "$o.err" 'https://github.com/melodic-software/cursor-plugins'
+
 # --ref with no value is bash-only: pwsh's parameter binder owns that path.
 rc=0; run_sh "$h" "$work/c.ref" --dry-run "$f_ok" --ref || rc=$?
 if [[ "$rc" -eq 2 ]]; then ok "--ref with no value exits 2"; else
   not_ok "--ref with no value" "expected exit 2, got $rc"
 fi
 assert_contains "--ref with no value explains itself" "$work/c.ref.err" 'Missing value for --ref'
+
+# --- implicit source (no path / URL given) ------------------------------------
+
+printf 'implicit source\n'
+assert_twins implicit-default 0 --dry-run -- -DryRun
+
+# --- local git update ---------------------------------------------------------
+
+# These cases mutate the source, so each twin gets its own clone of the same
+# origin. assert_twins cannot share one behind-checkout: the first twin would
+# fast-forward it and the second would print "already up to date".
+
+git_ident() { git -c user.name=sync-local-test -c user.email=sync-local-test@example.com "$@"; }
+
+printf 'local git update\n'
+g="$work/gitfx"
+mkdir -p "$g"
+seed="$g/seed"
+git_ident init -b main "$seed" >/dev/null
+git -C "$seed" config commit.gpgsign false
+mkplugin "$seed" solo
+printf 'old\n' >"$seed/MARKER"
+git_ident -C "$seed" add -A
+git_ident -C "$seed" commit -m seed >/dev/null 2>&1
+git clone --bare --quiet "$seed" "$g/origin.git"
+git -C "$seed" remote add origin "$g/origin.git"
+git_ident -C "$seed" push -u origin main >/dev/null 2>&1
+printf 'new\n' >"$seed/MARKER"
+git_ident -C "$seed" add MARKER
+git_ident -C "$seed" commit -m new >/dev/null 2>&1
+git_ident -C "$seed" push origin main >/dev/null 2>&1
+
+clone_from_old() {
+  # Clone the origin, then reset to the first commit so we are one behind.
+  git clone --quiet "$g/origin.git" "$1"
+  git -C "$1" config commit.gpgsign false
+  git -C "$1" reset --hard HEAD~1 >/dev/null
+}
+
+# Fast-forward + copy the new marker
+clone_from_old "$work/behind.sh"
+clone_from_old "$work/behind.ps"
+h1="$work/h.git-ff.sh"; h2="$work/h.git-ff.ps"
+mkdir -p "$h1" "$h2"
+o1="$work/o.git-ff.sh"; o2="$work/o.git-ff.ps"
+rc1=0; run_sh "$h1" "$o1" "$work/behind.sh" || rc1=$?
+if [[ "$rc1" -eq 0 ]]; then ok "git-ff (sh exit 0)"; else
+  not_ok "git-ff (sh exit)" "expected 0, got $rc1" "$(head -5 "$o1" "$o1.err" 2>/dev/null)"
+fi
+if grep -qE '^Fast-forwarded [0-9a-f]{7}\.\.[0-9a-f]{7}$' "$o1"; then
+  ok "git-ff (sh announces fast-forward)"
+else
+  not_ok "git-ff (sh announces fast-forward)" "got: $(head -3 "$o1")"
+fi
+if [[ "$(cat "$h1/.cursor/plugins/local/solo/MARKER" 2>/dev/null)" == "new" ]]; then
+  ok "git-ff (sh copied updated marker)"
+else
+  not_ok "git-ff (sh copied updated marker)" "marker=$(cat "$h1/.cursor/plugins/local/solo/MARKER" 2>/dev/null)"
+fi
+if [[ "$have_pwsh" -eq 1 ]]; then
+  rc2=0; run_ps "$h2" "$o2" -Source "$work/behind.ps" || rc2=$?
+  if [[ "$rc2" -eq 0 ]]; then ok "git-ff (ps1 exit 0)"; else
+    not_ok "git-ff (ps1 exit)" "expected 0, got $rc2" "$(head -5 "$o2" "$o2.err" 2>/dev/null)"
+  fi
+  if diff <(sed -e "s|$h1|<HOME>|g" -e "s|$work/behind.sh|<SRC>|g" "$o1") \
+          <(sed -e "s|$h2|<HOME>|g" -e "s|$work/behind.ps|<SRC>|g" "$o2") \
+          >"$work/d.git-ff" 2>&1; then
+    ok "git-ff (twins byte-identical after path normalize)"
+  else
+    not_ok "git-ff (twin parity)" "$(head -8 "$work/d.git-ff")"
+  fi
+else
+  skip=$((skip + 1)); printf '  skip %s (pwsh not installed)\n' "git-ff"
+fi
+
+# Dirty checkout: do not pull, copy the old marker
+clone_from_old "$work/dirty.sh"
+clone_from_old "$work/dirty.ps"
+printf 'wip\n' >"$work/dirty.sh/WIP"
+printf 'wip\n' >"$work/dirty.ps/WIP"
+h="$work/h.git-dirty"; mkdir -p "$h"
+o="$work/o.git-dirty"
+run_sh "$h" "$o" "$work/dirty.sh" || true
+assert_contains "dirty checkout announces itself" "$o" "without pulling"
+if [[ "$(cat "$h/.cursor/plugins/local/solo/MARKER" 2>/dev/null)" == "old" ]]; then
+  ok "dirty checkout is not fast-forwarded"
+else
+  not_ok "dirty checkout is not fast-forwarded" "marker=$(cat "$h/.cursor/plugins/local/solo/MARKER" 2>/dev/null)"
+fi
+
+# --no-update: stay behind
+clone_from_old "$work/noup.sh"
+h="$work/h.git-noup"; mkdir -p "$h"
+o="$work/o.git-noup"
+run_sh "$h" "$o" --no-update "$work/noup.sh" || true
+assert_absent " --no-update does not fast-forward" "$o" "Fast-forwarded"
+if [[ "$(cat "$h/.cursor/plugins/local/solo/MARKER" 2>/dev/null)" == "old" ]]; then
+  ok "--no-update copies the current (stale) tree"
+else
+  not_ok "--no-update copies the current (stale) tree" "marker=$(cat "$h/.cursor/plugins/local/solo/MARKER" 2>/dev/null)"
+fi
+
+# Dry-run of a behind checkout must not mutate it
+clone_from_old "$work/drybehind"
+old_head="$(git -C "$work/drybehind" rev-parse HEAD)"
+h="$work/h.git-dry"; mkdir -p "$h"
+run_sh "$h" "$work/o.git-dry" --dry-run "$work/drybehind" || true
+new_head="$(git -C "$work/drybehind" rev-parse HEAD)"
+if [[ "$old_head" == "$new_head" ]]; then
+  ok "dry-run does not fast-forward the source"
+else
+  not_ok "dry-run does not fast-forward the source" "HEAD moved $old_head -> $new_head"
+fi
+assert_absent "dry-run of a git source prints no update line" "$work/o.git-dry" "Fast-forwarded"
+assert_absent "dry-run of a git source does not claim up to date" "$work/o.git-dry" "already up to date"
 
 # --- real (non-dry) sync: the destination must be a real directory ------------
 
