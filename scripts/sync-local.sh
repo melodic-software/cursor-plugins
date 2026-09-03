@@ -105,6 +105,9 @@ resolve_implicit_source() {
 }
 
 # Fast-forward a local git checkout so a stale clone does not get copied.
+# After a successful --ff-only, update submodules (--init --recursive) so a
+# changed gitlink does not leave the working tree at the old plugin commit.
+# If that update fails, reset the superproject and degrade to current HEAD.
 # Never prompted (GIT_TERMINAL_PROMPT=0). Failures degrade to "sync current HEAD".
 # Prints one stdout line so both twins stay byte-identical. Dry-run and
 # --no-update skip this entirely (a dry run must not mutate the source).
@@ -136,8 +139,18 @@ update_local_git() {
     echo "Local checkout already up to date ($head)"
     return 0
   fi
+  local full_head
+  full_head="$(git -C "$root" rev-parse HEAD 2>/dev/null || true)"
   if GIT_TERMINAL_PROMPT=0 git -C "$root" merge --ff-only --no-edit '@{u}' >/dev/null 2>&1; then
-    echo "Fast-forwarded $head..$(git -C "$root" rev-parse --short=7 HEAD)"
+    if GIT_TERMINAL_PROMPT=0 git -C "$root" submodule update --init --recursive >/dev/null 2>&1; then
+      echo "Fast-forwarded $head..$(git -C "$root" rev-parse --short=7 HEAD)"
+      return 0
+    fi
+    # Superproject moved but checked-out submodules did not. Roll back so we
+    # do not copy a dirty half-updated tree, and so the next run can retry.
+    GIT_TERMINAL_PROMPT=0 git -C "$root" reset --hard "$full_head" >/dev/null 2>&1 || true
+    GIT_TERMINAL_PROMPT=0 git -C "$root" submodule update --init --recursive >/dev/null 2>&1 || true
+    echo "Could not fast-forward; syncing current HEAD $head"
     return 0
   fi
   echo "Could not fast-forward; syncing current HEAD $head"

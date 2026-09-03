@@ -315,6 +315,97 @@ else
   skip=$((skip + 1)); printf '  skip %s (pwsh not installed)\n' "git-ff"
 fi
 
+# Fast-forward a marketplace whose plugin lives in a submodule. The
+# superproject gitlink advances; without `submodule update` the working
+# tree stays on the old plugin commit (git status: `M plugins/sub`).
+subseed="$g/subseed"
+git_ident init -b main "$subseed" >/dev/null
+git -C "$subseed" config commit.gpgsign false
+mkplugin "$subseed" solo
+printf 'old\n' >"$subseed/MARKER"
+git_ident -C "$subseed" add -A
+git_ident -C "$subseed" commit -m 'sub seed' >/dev/null 2>&1
+git clone --bare --quiet "$subseed" "$g/sub.origin.git"
+git -C "$subseed" remote add origin "$g/sub.origin.git"
+git_ident -C "$subseed" push -u origin main >/dev/null 2>&1
+
+superseed="$g/superseed"
+git_ident init -b main "$superseed" >/dev/null
+git -C "$superseed" config commit.gpgsign false
+git -C "$superseed" config protocol.file.allow always
+mkmarket "$superseed" '{"name":"solo","source":"sub"}'
+git -C "$superseed" -c protocol.file.allow=always submodule add "$g/sub.origin.git" plugins/sub >/dev/null 2>&1
+git_ident -C "$superseed" add -A
+git_ident -C "$superseed" commit -m 'super seed' >/dev/null 2>&1
+git clone --bare --quiet "$superseed" "$g/super.origin.git"
+git -C "$superseed" remote add origin "$g/super.origin.git"
+git_ident -C "$superseed" push -u origin main >/dev/null 2>&1
+
+printf 'new\n' >"$subseed/MARKER"
+git_ident -C "$subseed" add MARKER
+git_ident -C "$subseed" commit -m 'sub new' >/dev/null 2>&1
+git_ident -C "$subseed" push origin main >/dev/null 2>&1
+git -C "$superseed/plugins/sub" pull --ff-only --quiet
+git -C "$superseed" add plugins/sub
+git_ident -C "$superseed" commit -m 'bump sub' >/dev/null 2>&1
+git_ident -C "$superseed" push origin main >/dev/null 2>&1
+
+clone_super_from_old() {
+  git clone --quiet "$g/super.origin.git" "$1"
+  git -C "$1" config commit.gpgsign false
+  git -C "$1" config protocol.file.allow always
+  git -C "$1" reset --hard HEAD~1 >/dev/null
+  git -C "$1" -c protocol.file.allow=always submodule update --init --recursive >/dev/null
+}
+
+clone_super_from_old "$work/behind-sub.sh"
+clone_super_from_old "$work/behind-sub.ps"
+h1="$work/h.git-ff-sub.sh"; h2="$work/h.git-ff-sub.ps"
+mkdir -p "$h1" "$h2"
+o1="$work/o.git-ff-sub.sh"; o2="$work/o.git-ff-sub.ps"
+rc1=0; run_sh "$h1" "$o1" "$work/behind-sub.sh" || rc1=$?
+if [[ "$rc1" -eq 0 ]]; then ok "git-ff-submodule (sh exit 0)"; else
+  not_ok "git-ff-submodule (sh exit)" "expected 0, got $rc1" "$(head -5 "$o1" "$o1.err" 2>/dev/null)"
+fi
+if grep -qE '^Fast-forwarded [0-9a-f]{7}\.\.[0-9a-f]{7}$' "$o1"; then
+  ok "git-ff-submodule (sh announces fast-forward)"
+else
+  not_ok "git-ff-submodule (sh announces fast-forward)" "got: $(head -3 "$o1")"
+fi
+if [[ "$(cat "$h1/.cursor/plugins/local/solo/MARKER" 2>/dev/null)" == "new" ]]; then
+  ok "git-ff-submodule (sh copied updated submodule marker)"
+else
+  not_ok "git-ff-submodule (sh copied updated submodule marker)" \
+    "marker=$(cat "$h1/.cursor/plugins/local/solo/MARKER" 2>/dev/null)"
+fi
+if [[ -z "$(git -C "$work/behind-sub.sh" status --porcelain 2>/dev/null)" ]]; then
+  ok "git-ff-submodule (sh leaves a clean superproject)"
+else
+  not_ok "git-ff-submodule (sh leaves a clean superproject)" \
+    "status=$(git -C "$work/behind-sub.sh" status --porcelain)"
+fi
+if [[ "$have_pwsh" -eq 1 ]]; then
+  rc2=0; run_ps "$h2" "$o2" -Source "$work/behind-sub.ps" || rc2=$?
+  if [[ "$rc2" -eq 0 ]]; then ok "git-ff-submodule (ps1 exit 0)"; else
+    not_ok "git-ff-submodule (ps1 exit)" "expected 0, got $rc2" "$(head -5 "$o2" "$o2.err" 2>/dev/null)"
+  fi
+  if [[ "$(cat "$h2/.cursor/plugins/local/solo/MARKER" 2>/dev/null)" == "new" ]]; then
+    ok "git-ff-submodule (ps1 copied updated submodule marker)"
+  else
+    not_ok "git-ff-submodule (ps1 copied updated submodule marker)" \
+      "marker=$(cat "$h2/.cursor/plugins/local/solo/MARKER" 2>/dev/null)"
+  fi
+  if diff <(sed -e "s|$h1|<HOME>|g" -e "s|$work/behind-sub.sh|<SRC>|g" "$o1") \
+          <(sed -e "s|$h2|<HOME>|g" -e "s|$work/behind-sub.ps|<SRC>|g" "$o2") \
+          >"$work/d.git-ff-sub" 2>&1; then
+    ok "git-ff-submodule (twins byte-identical after path normalize)"
+  else
+    not_ok "git-ff-submodule (twin parity)" "$(head -8 "$work/d.git-ff-sub")"
+  fi
+else
+  skip=$((skip + 1)); printf '  skip %s (pwsh not installed)\n' "git-ff-submodule"
+fi
+
 # Dirty checkout: do not pull, copy the old marker
 clone_from_old "$work/dirty.sh"
 clone_from_old "$work/dirty.ps"

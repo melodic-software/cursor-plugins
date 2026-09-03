@@ -275,6 +275,9 @@ function Get-ShortHead {
 
 function Invoke-LocalGitFastForward {
   # Fast-forward a local git checkout so a stale clone does not get copied.
+  # After a successful --ff-only, update submodules (--init --recursive) so a
+  # changed gitlink does not leave the working tree at the old plugin commit.
+  # If that update fails, reset the superproject and degrade to current HEAD.
   # Never prompted (GIT_TERMINAL_PROMPT=0). Failures degrade to syncing HEAD.
   # Prints one stdout line so both twins stay byte-identical.
   param([Parameter(Mandatory)][string] $Root)
@@ -311,9 +314,21 @@ function Invoke-LocalGitFastForward {
       return
     }
 
+    $fullHead = git -C $Root rev-parse HEAD 2>$null
     git -C $Root merge --ff-only --no-edit '@{u}' 2>$null | Out-Null
     if ($LASTEXITCODE -eq 0) {
-      Write-Host "Fast-forwarded $head..$(Get-ShortHead $Root)"
+      git -C $Root submodule update --init --recursive 2>$null | Out-Null
+      if ($LASTEXITCODE -eq 0) {
+        Write-Host "Fast-forwarded $head..$(Get-ShortHead $Root)"
+        return
+      }
+      # Superproject moved but checked-out submodules did not. Roll back so we
+      # do not copy a dirty half-updated tree, and so the next run can retry.
+      if (-not [string]::IsNullOrWhiteSpace($fullHead)) {
+        git -C $Root reset --hard $fullHead 2>$null | Out-Null
+        git -C $Root submodule update --init --recursive 2>$null | Out-Null
+      }
+      Write-Host "Could not fast-forward; syncing current HEAD $head"
       return
     }
     Write-Host "Could not fast-forward; syncing current HEAD $head"

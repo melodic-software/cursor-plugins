@@ -55,10 +55,10 @@ Use **`plugin-ops`** skills (they fetch [Cursor docs](https://cursor.com/docs/pl
 | Validate layout vs live docs + Melodic policy | `/verify-plugin` |
 
 Script (works for **any** marketplace or single-plugin repo, not only Melodic).
-A local git source is fast-forwarded when it is clean and tracking a remote,
-then copied in the same run. If you omit `-Source`, the script uses this repo,
-then a short checkout list, then clones this marketplace URL — it does not walk
-`$HOME`.
+A local git source is fast-forwarded when it is clean and tracking a remote
+(including checked-out submodules), then copied in the same run. If you omit
+`-Source`, the script uses this repo, then a short checkout list, then clones
+this marketplace URL — it does not walk `$HOME`.
 
 ```powershell
 pwsh -File scripts/sync-local.ps1 -Source https://github.com/org/repo

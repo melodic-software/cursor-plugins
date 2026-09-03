@@ -28,7 +28,7 @@ separate `commands/` layer.
 marketplace or plugin, then a short known-checkout list (no home-directory
 walk), then they clone `https://github.com/melodic-software/cursor-plugins`.
 A local git checkout is fetched and fast-forwarded when the tree is clean and
-has an upstream, then copied in the same run.
+has an upstream (including checked-out submodules), then copied in the same run.
 
 | Behavior | PowerShell | Bash |
 | --- | --- | --- |

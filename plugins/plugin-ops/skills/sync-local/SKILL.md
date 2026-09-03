@@ -53,7 +53,10 @@ home-directory search to find them.
 
 When Source is a **local git checkout**, the script fetches and fast-forwards a
 clean tracking branch before copying (so a clone that is behind origin is not
-what gets installed). It does **not** pull a dirty tree, rebase, or merge
+what gets installed). A successful fast-forward also runs
+`git submodule update --init --recursive` so a changed gitlink is checked out
+before the copy; if that update fails the superproject is reset and the run
+copies current `HEAD`. It does **not** pull a dirty tree, rebase, or merge
 diverged branches — it prints one line and copies `HEAD` as-is. `--dry-run` /
 `-DryRun` never updates the source. Pass `--no-update` / `-NoUpdate` to skip
 the fetch. After a successful update, the same run copies the new tree — do not
