@@ -15,6 +15,11 @@
 # Exit:  0 all assertions passed, 1 otherwise.
 set -euo pipefail
 
+# Git 2.37+ background maintenance can drop objects/maintenance.lock while
+# `git clone --bare` is copying objects. That race aborted this suite on a
+# GitHub runner: failed to copy file to '.../origin.git/objects/maintenance.lock'.
+export GIT_OPTIONAL_LOCKS=0
+
 repo_root="$(cd "$(dirname "$0")/.." && pwd)"
 sh_script="$repo_root/scripts/sync-local.sh"
 ps_script="$repo_root/scripts/sync-local.ps1"
@@ -254,17 +259,25 @@ assert_twins implicit-default 0 --dry-run -- -DryRun
 
 git_ident() { git -c user.name=sync-local-test -c user.email=sync-local-test@example.com "$@"; }
 
+# Disable signing and auto-maintenance on a fixture repo so ephemeral clones
+# do not race git's objects/maintenance.lock (see GIT_OPTIONAL_LOCKS above).
+quiet_test_git() {
+  git -C "$1" config commit.gpgsign false
+  git -C "$1" config maintenance.auto false
+  git -C "$1" config gc.auto 0
+}
+
 printf 'local git update\n'
 g="$work/gitfx"
 mkdir -p "$g"
 seed="$g/seed"
 git_ident init -b main "$seed" >/dev/null
-git -C "$seed" config commit.gpgsign false
+quiet_test_git "$seed"
 mkplugin "$seed" solo
 printf 'old\n' >"$seed/MARKER"
 git_ident -C "$seed" add -A
 git_ident -C "$seed" commit -m seed >/dev/null 2>&1
-git clone --bare --quiet "$seed" "$g/origin.git"
+git -c maintenance.auto=false -c gc.auto=0 clone --bare --quiet "$seed" "$g/origin.git"
 git -C "$seed" remote add origin "$g/origin.git"
 git_ident -C "$seed" push -u origin main >/dev/null 2>&1
 printf 'new\n' >"$seed/MARKER"
@@ -274,8 +287,8 @@ git_ident -C "$seed" push origin main >/dev/null 2>&1
 
 clone_from_old() {
   # Clone the origin, then reset to the first commit so we are one behind.
-  git clone --quiet "$g/origin.git" "$1"
-  git -C "$1" config commit.gpgsign false
+  git -c maintenance.auto=false -c gc.auto=0 clone --quiet "$g/origin.git" "$1"
+  quiet_test_git "$1"
   git -C "$1" reset --hard HEAD~1 >/dev/null
 }
 
@@ -320,24 +333,24 @@ fi
 # tree stays on the old plugin commit (git status: `M plugins/sub`).
 subseed="$g/subseed"
 git_ident init -b main "$subseed" >/dev/null
-git -C "$subseed" config commit.gpgsign false
+quiet_test_git "$subseed"
 mkplugin "$subseed" solo
 printf 'old\n' >"$subseed/MARKER"
 git_ident -C "$subseed" add -A
 git_ident -C "$subseed" commit -m 'sub seed' >/dev/null 2>&1
-git clone --bare --quiet "$subseed" "$g/sub.origin.git"
+git -c maintenance.auto=false -c gc.auto=0 clone --bare --quiet "$subseed" "$g/sub.origin.git"
 git -C "$subseed" remote add origin "$g/sub.origin.git"
 git_ident -C "$subseed" push -u origin main >/dev/null 2>&1
 
 superseed="$g/superseed"
 git_ident init -b main "$superseed" >/dev/null
-git -C "$superseed" config commit.gpgsign false
+quiet_test_git "$superseed"
 git -C "$superseed" config protocol.file.allow always
 mkmarket "$superseed" '{"name":"solo","source":"sub"}'
 git -C "$superseed" -c protocol.file.allow=always submodule add "$g/sub.origin.git" plugins/sub >/dev/null 2>&1
 git_ident -C "$superseed" add -A
 git_ident -C "$superseed" commit -m 'super seed' >/dev/null 2>&1
-git clone --bare --quiet "$superseed" "$g/super.origin.git"
+git -c maintenance.auto=false -c gc.auto=0 clone --bare --quiet "$superseed" "$g/super.origin.git"
 git -C "$superseed" remote add origin "$g/super.origin.git"
 git_ident -C "$superseed" push -u origin main >/dev/null 2>&1
 
@@ -351,8 +364,8 @@ git_ident -C "$superseed" commit -m 'bump sub' >/dev/null 2>&1
 git_ident -C "$superseed" push origin main >/dev/null 2>&1
 
 clone_super_from_old() {
-  git clone --quiet "$g/super.origin.git" "$1"
-  git -C "$1" config commit.gpgsign false
+  git -c maintenance.auto=false -c gc.auto=0 clone --quiet "$g/super.origin.git" "$1"
+  quiet_test_git "$1"
   git -C "$1" config protocol.file.allow always
   git -C "$1" reset --hard HEAD~1 >/dev/null
   git -C "$1" -c protocol.file.allow=always submodule update --init --recursive >/dev/null
