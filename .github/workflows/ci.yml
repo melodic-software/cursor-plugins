@@ -43,9 +43,16 @@ permissions:
 # and one pending run per group and the newest pending wins, so the
 # carry-forward always executes after the full run it depends on. A
 # `synchronize` still cancels everything on the old SHA.
+#
+# The predicate is NOT conjoined with `github.event_name == 'pull_request'`
+# here. This key falls back to `github.ref`, so every push to `main` shares one
+# group, and that group's burst collapse is ci-workflows#122's decision. On a
+# `push`, `merge_group` or `workflow_dispatch` event the predicate is false
+# (`github.event.pull_request` is null), so this stays `true` there and the
+# existing push-side behaviour is preserved exactly.
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: ${{ github.event_name == 'pull_request' && !(github.event.pull_request.head.repo.full_name == github.repository && (contains(fromJSON('["labeled","unlabeled"]'), github.event.action) || (github.event.action == 'edited' && !github.event.changes.base))) }}
+  cancel-in-progress: ${{ !(github.event.pull_request.head.repo.full_name == github.repository && (contains(fromJSON('["labeled","unlabeled"]'), github.event.action) || (github.event.action == 'edited' && !github.event.changes.base))) }}
 
 jobs:
   shell:
