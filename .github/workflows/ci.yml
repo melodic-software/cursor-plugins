@@ -13,6 +13,7 @@ on:
   push:
     branches: [main]
   pull_request:
+  merge_group:
   workflow_dispatch:
 
 permissions:
@@ -155,3 +156,24 @@ jobs:
                      sed 's/^](//; s/)$//')
           done < <(git ls-files '*.md')
           exit $status
+
+  # Single aggregate lane, in the codex-plugins shape: `ci-status` is one of the
+  # four contexts the org ci-gate ruleset requires, so every lane above has to
+  # reach the gate through this one job name.
+  ci-status:
+    needs: [shell, powershell, manifests, links]
+    if: ${{ !cancelled() }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - name: Aggregate lane results
+        env:
+          RESULTS: ${{ join(needs.*.result, ' ') }}
+        run: |
+          for result in $RESULTS; do
+            case "$result" in
+              success) ;;
+              *) echo "A required lane did not pass (result: $result)."; exit 1 ;;
+            esac
+          done
+          echo "All required lanes passed."
