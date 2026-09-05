@@ -1,0 +1,29 @@
+# Keep the SHA-pinned actions in .github/workflows/ current. Dependabot is
+# GitHub-native: no third-party app and no PAT. This repository has no package
+# manager and no application build, so `github-actions` is the only ecosystem
+# with a manifest to read here.
+version: 2
+updates:
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+    # An explicit labels: list replaces (not adds to) Dependabot's automatic
+    # labels, so the ecosystem-derived default is restated alongside
+    # dependencies.
+    # https://docs.github.com/en/code-security/dependabot/dependabot-version-updates/configuration-options-for-the-dependabot.yml-file#labels
+    labels:
+      - dependencies
+      - github_actions
+    # `ci-status` fails a pull request whose title is not Conventional Commits,
+    # and Dependabot's default title carries no type, so the prefix is
+    # required rather than cosmetic.
+    commit-message:
+      prefix: build
+    # Collapse every action bump into one pull request, so the next
+    # ci-workflows tag arrives as a single reviewable change instead of one
+    # pull request per reference.
+    groups:
+      github-actions:
+        patterns:
+          - '*'
