@@ -10,7 +10,12 @@
 # --no-update or --dry-run.
 set -euo pipefail
 
-repo_default="$(cd "$(dirname "$0")/.." && pwd)"
+# ${0%/*} is the builtin equivalent of dirname(1). When $0 has no slash,
+# dirname prints "."; parameter expansion leaves the string unchanged.
+_sync_local_dir="${0%/*}"
+[[ "$_sync_local_dir" == "$0" ]] && _sync_local_dir=.
+repo_default="$(cd "$_sync_local_dir/.." && pwd)"
+unset _sync_local_dir
 melodic_marketplace_url="https://github.com/melodic-software/cursor-plugins"
 dry_run=0
 keep_clone=0
@@ -163,12 +168,21 @@ local_root="${HOME}/.cursor/plugins/local"
 is_git_url() {
   # Matched case-insensitively: URI schemes are case-insensitive (RFC 3986 3.1),
   # so "HTTPS://host/repo" is a URL, not a local path. `[[ =~ ]]` and `==` are
-  # case-sensitive, so fold the value first rather than relying on the caller.
-  # (The pwsh twin's -match/-like are case-insensitive by default; this keeps the
-  # two in step.) Folded with tr, not bash 4's ${x,,}, to stay usable under 3.2.
-  local value
-  value="$(printf '%s' "$1" | tr '[:upper:]' '[:lower:]')"
-  [[ "$value" =~ ^(https://|git@|ssh://) ]] || [[ "$value" == *.git ]]
+  # case-sensitive. `shopt nocasematch` is a bash 3.1+ builtin and avoids the
+  # `tr` fork the previous fold used; the pwsh twin's -match/-like are
+  # case-insensitive by default, so the two stay in step. Restore the caller's
+  # nocasematch state. The `if` form is required under `set -e` so a non-match
+  # does not abort the function.
+  local restore=0 rc
+  shopt -q nocasematch || restore=1
+  shopt -s nocasematch
+  if [[ "$1" =~ ^(https://|git@|ssh://) || "$1" == *.git ]]; then
+    rc=0
+  else
+    rc=1
+  fi
+  if [[ "$restore" -eq 1 ]]; then shopt -u nocasematch; fi
+  return "$rc"
 }
 
 # Resolve a path to an absolute, lexically normalised form: "." and ".." segments
@@ -238,7 +252,9 @@ else
   fi
 fi
 
-mkdir -p "$local_root"
+# `mkdir -p` is a fork even when the directory already exists. Repeat syncs
+# (the common case) skip it; the first run still creates the dest root.
+[[ -d "$local_root" ]] || mkdir -p "$local_root"
 
 marketplace="$work_root/.cursor-plugin/marketplace.json"
 root_plugin="$work_root/.cursor-plugin/plugin.json"
@@ -350,7 +366,7 @@ elif [[ -f "$root_plugin" ]]; then
     name=""
   fi
   if [[ -z "$name" ]]; then
-    name="$(basename "$work_root")"
+    name="${work_root##*/}"
     echo "Warning: falling back to the directory name '$name', which may not be the plugin's declared name" >&2
   fi
   if [[ "${#plugins[@]}" -gt 0 ]]; then
@@ -385,7 +401,10 @@ elif [[ -d "$work_root/plugins" ]]; then
       if [[ -n "$plugin_name" ]]; then sel+=("$plugin_name"); fi
     done < <(
       for dir in "$work_root"/plugins/*/; do
-        if [[ -d "$dir" ]]; then basename "$dir"; fi
+        if [[ -d "$dir" ]]; then
+          _plugin_dir="${dir%/}"
+          printf '%s\n' "${_plugin_dir##*/}"
+        fi
       done | LC_ALL=C sort
     )
   fi
