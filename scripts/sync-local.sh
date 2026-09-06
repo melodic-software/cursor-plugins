@@ -10,7 +10,12 @@
 # --no-update or --dry-run.
 set -euo pipefail
 
-repo_default="$(cd "$(dirname "$0")/.." && pwd)"
+# ${0%/*} is the builtin equivalent of dirname(1). When $0 has no slash,
+# dirname prints "."; parameter expansion leaves the string unchanged.
+_sync_local_dir="${0%/*}"
+[[ "$_sync_local_dir" == "$0" ]] && _sync_local_dir=.
+repo_default="$(cd "$_sync_local_dir/.." && pwd)"
+unset _sync_local_dir
 melodic_marketplace_url="https://github.com/melodic-software/cursor-plugins"
 dry_run=0
 keep_clone=0
@@ -163,12 +168,21 @@ local_root="${HOME}/.cursor/plugins/local"
 is_git_url() {
   # Matched case-insensitively: URI schemes are case-insensitive (RFC 3986 3.1),
   # so "HTTPS://host/repo" is a URL, not a local path. `[[ =~ ]]` and `==` are
-  # case-sensitive, so fold the value first rather than relying on the caller.
-  # (The pwsh twin's -match/-like are case-insensitive by default; this keeps the
-  # two in step.) Folded with tr, not bash 4's ${x,,}, to stay usable under 3.2.
-  local value
-  value="$(printf '%s' "$1" | tr '[:upper:]' '[:lower:]')"
-  [[ "$value" =~ ^(https://|git@|ssh://) ]] || [[ "$value" == *.git ]]
+  # case-sensitive. `shopt nocasematch` is a bash 3.1+ builtin and avoids the
+  # `tr` fork the previous fold used; the pwsh twin's -match/-like are
+  # case-insensitive by default, so the two stay in step. Restore the caller's
+  # nocasematch state. The `if` form is required under `set -e` so a non-match
+  # does not abort the function.
+  local restore=0 rc
+  shopt -q nocasematch || restore=1
+  shopt -s nocasematch
+  if [[ "$1" =~ ^(https://|git@|ssh://) || "$1" == *.git ]]; then
+    rc=0
+  else
+    rc=1
+  fi
+  if [[ "$restore" -eq 1 ]]; then shopt -u nocasematch; fi
+  return "$rc"
 }
 
 # Resolve a path to an absolute, lexically normalised form: "." and ".." segments
@@ -238,7 +252,9 @@ else
   fi
 fi
 
-mkdir -p "$local_root"
+# `mkdir -p` is a fork even when the directory already exists. Repeat syncs
+# (the common case) skip it; the first run still creates the dest root.
+[[ -d "$local_root" ]] || mkdir -p "$local_root"
 
 marketplace="$work_root/.cursor-plugin/marketplace.json"
 root_plugin="$work_root/.cursor-plugin/plugin.json"
@@ -254,57 +270,84 @@ if [[ -f "$marketplace" ]]; then
   fi
   work_root_resolved="$(resolve_path "$work_root")"
   plugin_root="$work_root_resolved"
-  pr="$(python3 -c 'import json,sys; m=json.load(open(sys.argv[1])); print((m.get("metadata") or {}).get("pluginRoot") or "")' "$marketplace")"
-  if [[ -n "$pr" ]]; then
-    plugin_root="$(resolve_path "$work_root_resolved/$pr")"
-    # metadata.pluginRoot is untrusted input too: "../.." here would move the base
-    # of every later join outside the source tree, so refuse it up front rather
-    # than skipping each plugin in turn.
-    if ! path_contains "$work_root_resolved" "$plugin_root"; then
-      echo "metadata.pluginRoot escapes the source repo: $pr" >&2
-      exit 1
-    fi
-  fi
-  if [[ "${#plugins[@]}" -gt 0 ]]; then
-    # The requested names are matched case-SENSITIVELY (Python's == below, and
-    # -ceq in the pwsh twin): the official schema constrains a plugin name to
-    # ^[a-z0-9]([a-z0-9.-]*[a-z0-9])?$, so exact matching is the schema-correct
-    # and stricter choice.
-    sel=("${plugins[@]}")
-  else
-    sel=()
-    while IFS= read -r line; do
-      if [[ -n "$line" ]]; then sel+=("$line"); fi
-    # .get("name"), not ["name"]: an entry with no "name" key made this raise a
-    # KeyError and print a raw Python traceback to stderr. It now yields an empty
-    # line, which the -n guard above drops -- the same treatment the pwsh twin
-    # gives a nameless entry.
-    done < <(python3 -c 'import json,sys; m=json.load(open(sys.argv[1])); print("\n".join(str(p.get("name") or "") for p in m.get("plugins",[])))' "$marketplace")
-  fi
-  for name in "${sel[@]}"; do
-    rel="$(python3 -c 'import json,sys
-m=json.load(open(sys.argv[1])); name=sys.argv[2]
-for p in m.get("plugins", []):
-  if p.get("name") == name:
-    s = p.get("source", name)
-    print(s if isinstance(s, str) else s.get("path", name))
-    break
+  # Parse marketplace.json in ONE python3 process. The previous shape was
+  # 2+N interpreter starts (pluginRoot, the name list, then one lookup per
+  # plugin): 5 python3 execves for this three-plugin marketplace, 32 for a
+  # 30-plugin fixture, against a measured floor of 1. CPython documents
+  # process startup as a real cost (https://docs.python.org/3/using/cmdline.html);
+  # Google's Shell Style Guide prefers builtins over extra processes and
+  # says to use something other than shell when the work is data-shaped
+  # (https://google.github.io/styleguide/shellguide.html). The PowerShell
+  # twin already loads the file once via ConvertFrom-Json. Path-containment
+  # stays in bash so it keeps using resolve_path / path_contains, matching
+  # the twin's Get-NormalizedPath / Test-PathContained.
+  #
+  # Wire format: first line is metadata.pluginRoot (empty if absent); each
+  # later line is name<TAB>rel. Names are schema-constrained
+  # (^[a-z0-9]([a-z0-9.-]*[a-z0-9])?$), so a tab cannot appear in `name`.
+  # Requested names (argv after the file) are matched case-SENSITIVELY
+  # (Python `==`, -ceq in the pwsh twin). Nameless entries are dropped
+  # here rather than emitted as an empty line -- the same treatment the
+  # pwsh twin gives a nameless entry. A requested name missing from the
+  # catalog still yields rel=name, as the per-plugin lookup did.
+  # Command substitution (not a process-substitution redirect) so a
+  # python3 failure still trips `set -e`, matching the previous
+  # per-invocation assignments.
+  parsed="$(python3 - "$marketplace" "${plugins[@]}" <<'PY'
+import json, sys
+m = json.load(open(sys.argv[1]))
+print((m.get("metadata") or {}).get("pluginRoot") or "")
+wanted = sys.argv[2:]
+entries = m.get("plugins", [])
+if wanted:
+    sel = wanted
 else:
-  print(name)
-' "$marketplace" "$name")"
-    # `rel` is untrusted marketplace.json content (plugins[].source, or
-    # plugins[].source.path). A value of "../../../etc" would make the read side
-    # copy files from outside the source repo into the user's plugins root -- the
-    # mirror image of the write-side name guard below, which was already closed.
-    # Resolve the join and require it to stay under $plugin_root.
-    src_resolved="$(resolve_path "$plugin_root/$rel")"
-    if ! path_contains "$plugin_root" "$src_resolved"; then
-      skipped+=("$name (source escapes plugin root)")
-      continue
+    sel = [str(p.get("name") or "") for p in entries]
+    sel = [n for n in sel if n]
+first = {}
+for p in entries:
+    n = p.get("name") or ""
+    if n and n not in first:
+        first[n] = p
+for name in sel:
+    p = first.get(name)
+    if p is None:
+        rel = name
+    else:
+        s = p.get("source", name)
+        rel = s if isinstance(s, str) else s.get("path", name)
+    print("%s\t%s" % (name, rel))
+PY
+)"
+  {
+    IFS= read -r pr || true
+    if [[ -n "$pr" ]]; then
+      plugin_root="$(resolve_path "$work_root_resolved/$pr")"
+      # metadata.pluginRoot is untrusted input too: "../.." here would move
+      # the base of every later join outside the source tree, so refuse it
+      # up front rather than skipping each plugin in turn.
+      if ! path_contains "$work_root_resolved" "$plugin_root"; then
+        echo "metadata.pluginRoot escapes the source repo: $pr" >&2
+        exit 1
+      fi
     fi
-    names+=("$name")
-    paths+=("$src_resolved")
-  done
+    while IFS=$'\t' read -r name rel; do
+      [[ -n "$name" ]] || continue
+      # `rel` is untrusted marketplace.json content (plugins[].source, or
+      # plugins[].source.path). A value of "../../../etc" would make the
+      # read side copy files from outside the source repo into the user's
+      # plugins root -- the mirror image of the write-side name guard
+      # below, which was already closed. Resolve the join and require it
+      # to stay under $plugin_root.
+      src_resolved="$(resolve_path "$plugin_root/$rel")"
+      if ! path_contains "$plugin_root" "$src_resolved"; then
+        skipped+=("$name (source escapes plugin root)")
+        continue
+      fi
+      names+=("$name")
+      paths+=("$src_resolved")
+    done
+  } <<< "$parsed"
 elif [[ -f "$root_plugin" ]]; then
   # Two stacked fallbacks, kept because they cover different failure modes:
   # python3 missing or plugin.json unparseable (non-zero exit), and python3 fine
@@ -323,7 +366,7 @@ elif [[ -f "$root_plugin" ]]; then
     name=""
   fi
   if [[ -z "$name" ]]; then
-    name="$(basename "$work_root")"
+    name="${work_root##*/}"
     echo "Warning: falling back to the directory name '$name', which may not be the plugin's declared name" >&2
   fi
   if [[ "${#plugins[@]}" -gt 0 ]]; then
@@ -358,7 +401,10 @@ elif [[ -d "$work_root/plugins" ]]; then
       if [[ -n "$plugin_name" ]]; then sel+=("$plugin_name"); fi
     done < <(
       for dir in "$work_root"/plugins/*/; do
-        if [[ -d "$dir" ]]; then basename "$dir"; fi
+        if [[ -d "$dir" ]]; then
+          _plugin_dir="${dir%/}"
+          printf '%s\n' "${_plugin_dir##*/}"
+        fi
       done | LC_ALL=C sort
     )
   fi
