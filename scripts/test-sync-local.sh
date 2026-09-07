@@ -20,7 +20,10 @@ set -euo pipefail
 # GitHub runner: failed to copy file to '.../origin.git/objects/maintenance.lock'.
 export GIT_OPTIONAL_LOCKS=0
 
-repo_root="$(cd "$(dirname "$0")/.." && pwd)"
+_test_dir="${0%/*}"
+[[ "$_test_dir" == "$0" ]] && _test_dir=.
+repo_root="$(cd "$_test_dir/.." && pwd)"
+unset _test_dir
 sh_script="$repo_root/scripts/sync-local.sh"
 ps_script="$repo_root/scripts/sync-local.ps1"
 
