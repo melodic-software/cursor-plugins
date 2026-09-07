@@ -91,7 +91,7 @@ jobs:
     if: ${{ !(github.event.pull_request.head.repo.full_name == github.repository && (contains(fromJSON('["labeled","unlabeled"]'), github.event.action) || (github.event.action == 'edited' && !github.event.changes.base))) }}
     runs-on: ubuntu-latest
     steps:
-      # actions/checkout v5.1.0 — pinned to a full-length commit SHA because this
+      # actions/checkout v7.0.1 — pinned to a full-length commit SHA because this
       # org requires it; a tag or short SHA is rejected at "Set up job".
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
 
@@ -115,7 +115,7 @@ jobs:
     if: ${{ !(github.event.pull_request.head.repo.full_name == github.repository && (contains(fromJSON('["labeled","unlabeled"]'), github.event.action) || (github.event.action == 'edited' && !github.event.changes.base))) }}
     runs-on: ubuntu-latest
     steps:
-      # actions/checkout v5.1.0 — pinned to a full-length commit SHA because this
+      # actions/checkout v7.0.1 — pinned to a full-length commit SHA because this
       # org requires it; a tag or short SHA is rejected at "Set up job".
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
 
@@ -149,7 +149,7 @@ jobs:
     if: ${{ !(github.event.pull_request.head.repo.full_name == github.repository && (contains(fromJSON('["labeled","unlabeled"]'), github.event.action) || (github.event.action == 'edited' && !github.event.changes.base))) }}
     runs-on: ubuntu-latest
     steps:
-      # actions/checkout v5.1.0 — pinned to a full-length commit SHA because this
+      # actions/checkout v7.0.1 — pinned to a full-length commit SHA because this
       # org requires it; a tag or short SHA is rejected at "Set up job".
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
 
@@ -195,7 +195,7 @@ jobs:
     if: ${{ !(github.event.pull_request.head.repo.full_name == github.repository && (contains(fromJSON('["labeled","unlabeled"]'), github.event.action) || (github.event.action == 'edited' && !github.event.changes.base))) }}
     runs-on: ubuntu-latest
     steps:
-      # actions/checkout v5.1.0 — pinned to a full-length commit SHA because this
+      # actions/checkout v7.0.1 — pinned to a full-length commit SHA because this
       # org requires it; a tag or short SHA is rejected at "Set up job".
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
 
