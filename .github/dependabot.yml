@@ -9,12 +9,12 @@ updates:
     schedule:
       interval: weekly
     # An explicit labels: list replaces (not adds to) Dependabot's automatic
-    # labels, so the ecosystem-derived default is restated alongside
-    # dependencies.
+    # labels. Only `dependencies` is listed: the ecosystem default
+    # `github_actions` is not in this org's github-iac label roster, and
+    # Dependabot fails the apply with "label could not be found".
     # https://docs.github.com/en/code-security/dependabot/dependabot-version-updates/configuration-options-for-the-dependabot.yml-file#labels
     labels:
       - dependencies
-      - github_actions
     # `ci-status` fails a pull request whose title is not Conventional Commits,
     # and Dependabot's default title carries no type, so the prefix is
     # required rather than cosmetic.
