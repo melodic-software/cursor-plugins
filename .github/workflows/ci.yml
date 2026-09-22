@@ -7,7 +7,10 @@ name: CI
 # Scope note: the repo-root config files synced from melodic-software/standards
 # (.editorconfig, .gitattributes, _typos.toml, lychee.toml, .gitleaks.toml,
 # .markdownlint-cli2.jsonc, .editorconfig-checker.json) are validated by their
-# own tooling upstream and are deliberately not re-linted here.
+# own tooling upstream and are deliberately not re-linted here. The spelling
+# lane still spell-checks the tracked tree, including those files, with the
+# managed `_typos.toml` (`locale = "en-us"`). It does not re-run their upstream
+# validators, and those files stay byte-identical to standards.
 
 on:
   push:
@@ -42,7 +45,7 @@ permissions:
 #
 # Contract-only branch: `ci-contract-<pr>-<run_id>`, unique per run. No
 # contract-only run can be cancelled, evict anything, or be evicted. That is
-# deliberate. Eviction of a *pending* run is unconditional in GitHub's queueing
+# deliberate. Eviction of a *pending* run is unconditional in GitHub's queuing
 # ("any existing pending job or workflow in the same concurrency group will be
 # canceled") and is NOT governed by `cancel-in-progress`, so the old shared
 # group let one contract-only event evict another and leave a check suite on
@@ -58,7 +61,7 @@ permissions:
 # the per-repository push decision, and this repository keeps `github.ref`: a
 # push, `merge_group` or `workflow_dispatch` run has no pull request number, so
 # every push to `main` shares one group and a newer push collapses the burst,
-# which is the existing behaviour (2 cancelled superseded push runs in the 30
+# which is the existing behavior (2 cancelled superseded push runs in the 30
 # days to 2026-09-05). The `github.event_name == 'pull_request'` guard the old
 # `cancel-in-progress` expression carried is gone: the predicate is false on
 # every non-pull-request event anyway, since `github.event.pull_request` is
@@ -226,11 +229,29 @@ jobs:
           done < <(git ls-files '*.md')
           exit $status
 
+  typos:
+    name: Spelling (typos, en-us)
+    # The contract-only predicate, verbatim (see the `on.pull_request` comment).
+    if: ${{ !(github.event.pull_request.head.repo.full_name == github.repository && (contains(fromJSON('["labeled","unlabeled"]'), github.event.action) || (github.event.action == 'edited' && !github.event.changes.base))) }}
+    runs-on: ubuntu-latest
+    steps:
+      # actions/checkout v7.0.1 — pinned to a full-length commit SHA because this
+      # org requires it; a tag or short SHA is rejected at "Set up job".
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+
+      # `hidden` exists starting at v0.26.0. The v0.24.0 action has no such input,
+      # and without it typos skips `.github/` and `.shellcheckrc`.
+      - name: typos (en-us, hidden files included)
+        uses: melodic-software/ci-workflows/.github/actions/typos@de644a0a80d78096a9f6074710f913eed13c9a91 # v0.26.0
+        with:
+          config: _typos.toml
+          hidden: true
+
   # Single aggregate lane, in the codex-plugins shape: `ci-status` is one of the
   # four contexts the org ci-gate ruleset requires, so every lane above has to
   # reach the gate through this one job name.
   ci-status:
-    needs: [shell, powershell, manifests, links]
+    needs: [shell, powershell, manifests, links, typos]
     if: ${{ !cancelled() }}
     runs-on: ubuntu-24.04
     timeout-minutes: 5

@@ -12,7 +12,7 @@
   Cursor may reject junctions whose target is outside ~/.cursor/plugins/local,
   so this script always writes real directory copies.
 
-  An unrecognised switch exits 1, where the bash twin exits 2. That code is
+  An unrecognized switch exits 1, where the bash twin exits 2. That code is
   emitted by PowerShell's own parameter binder before this script body runs and
   cannot be overridden from the script, so the divergence is intentional and
   settled - do not "fix" it.
@@ -91,7 +91,7 @@ function Test-IsGitUrl([string] $value) {
 }
 
 function Get-NormalizedPath {
-  # Absolute, lexically normalised ("." and ".." collapsed). GetFullPath does not
+  # Absolute, lexically normalized ("." and ".." collapsed). GetFullPath does not
   # follow symlinks, matching the bash twin's resolve_path: symlinks are not the
   # threat (a symlinked plugin directory is a supported layout, and planting one
   # already requires write access to the source tree), whereas ".." reaches files
@@ -103,7 +103,7 @@ function Get-NormalizedPath {
 
 function Test-PathContained {
   # True when $Candidate is $Base itself or lies under it. Both must already be
-  # absolute and normalised, so this compares resolved paths rather than raw input.
+  # absolute and normalized, so this compares resolved paths rather than raw input.
   param(
     [Parameter(Mandatory)][string] $Base,
     [Parameter(Mandatory)][string] $Candidate
@@ -181,7 +181,7 @@ function Resolve-PluginDirs {
       $dirs += [pscustomobject]@{ Name = $name; Path = $candidate; Skip = $null }
     }
   } elseif (Test-Path $rootPlugin) {
-    # An unparseable plugin.json aborts here (ConvertFrom-Json throws under
+    # An unparsable plugin.json aborts here (ConvertFrom-Json throws under
     # $ErrorActionPreference = "Stop"), where the bash twin warns and falls back
     # to the directory name. That divergence is deliberate: bash's parser is an
     # external optional dependency, so it must distinguish "python3 missing" from
@@ -399,7 +399,7 @@ try {
   New-Item -ItemType Directory -Force -Path $localRoot | Out-Null
 
   $pluginDirs = @(Resolve-PluginDirs -Root $workRoot -Only $Plugin)
-  # Covers both "no recognised layout" and "layout found but it named no plugins"
+  # Covers both "no recognized layout" and "layout found but it named no plugins"
   # (e.g. an empty plugins/ dir, or "plugins": [] in marketplace.json). Entries
   # that were named but refused are still counted here, so they fall through to
   # the Skipped report instead of being swallowed by this message.

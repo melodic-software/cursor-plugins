@@ -345,6 +345,7 @@ git -c maintenance.auto=false -c gc.auto=0 clone --bare --quiet "$subseed" "$g/s
 git -C "$subseed" remote add origin "$g/sub.origin.git"
 git_ident -C "$subseed" push -u origin main >/dev/null 2>&1
 
+# spellchecker:off superseed = super seed, parallel to subseed; not supersede
 superseed="$g/superseed"
 git_ident init -b main "$superseed" >/dev/null
 quiet_test_git "$superseed"
@@ -365,6 +366,7 @@ git -C "$superseed/plugins/sub" pull --ff-only --quiet
 git -C "$superseed" add plugins/sub
 git_ident -C "$superseed" commit -m 'bump sub' >/dev/null 2>&1
 git_ident -C "$superseed" push origin main >/dev/null 2>&1
+# spellchecker:on
 
 clone_super_from_old() {
   git -c maintenance.auto=false -c gc.auto=0 clone --quiet "$g/super.origin.git" "$1"
