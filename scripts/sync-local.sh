@@ -185,7 +185,7 @@ is_git_url() {
   return "$rc"
 }
 
-# Resolve a path to an absolute, lexically normalised form: "." and ".." segments
+# Resolve a path to an absolute, lexically normalized form: "." and ".." segments
 # are collapsed and a leading "" is anchored to $PWD. Deliberately does NOT follow
 # symlinks, for two reasons: `realpath -m` (resolve a not-yet-existing path) is a
 # GNU extension that BSD/macOS realpath lacks, and the pwsh twin's counterpart
@@ -210,7 +210,7 @@ resolve_path() {
 }
 
 # True when $2 is $1 itself or lies under it. Both must already be absolute and
-# normalised (resolve_path), so this is a comparison of resolved paths rather than
+# normalized (resolve_path), so this is a comparison of resolved paths rather than
 # a substring test on raw input.
 path_contains() {
   [[ "$2" == "$1" || "$2" == "$1"/* ]]
@@ -350,7 +350,7 @@ PY
   } <<< "$parsed"
 elif [[ -f "$root_plugin" ]]; then
   # Two stacked fallbacks, kept because they cover different failure modes:
-  # python3 missing or plugin.json unparseable (non-zero exit), and python3 fine
+  # python3 missing or plugin.json unparsable (non-zero exit), and python3 fine
   # but "name" absent or empty (empty output). Both end at the *directory* name,
   # which is a guess -- a manifest saying {"name":"good"} in a directory called
   # "single" would otherwise sync silently as "single", with exit 0 and no hint
@@ -414,7 +414,7 @@ elif [[ -d "$work_root/plugins" ]]; then
   done
 fi
 
-# Covers both "no recognised layout" and "layout found but it named no plugins"
+# Covers both "no recognized layout" and "layout found but it named no plugins"
 # (e.g. an empty plugins/ dir, or "plugins": [] in marketplace.json). Entries that
 # were named but refused above are not "not found", so they fall through to the
 # Skipped report instead of being swallowed by this message.

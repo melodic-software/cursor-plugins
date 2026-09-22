@@ -121,15 +121,19 @@ and the `scripts/sync-local.*` sync tooling. See `README.md` and
 `.github/workflows/ci.yml` runs the checks above on every push and pull request: shell
 lint of `scripts/*.sh` **and** `.cursor/install.sh`, plus the regression suite,
 PSScriptAnalyzer, JSON and schema validation of the manifests and
-`.cursor/environment.json`, and internal markdown link integrity. It deliberately does
-**not** check external URLs — GitHub and cursor.directory answer CI runners with
-403/429, which would fail the build for reasons that say nothing about the repository.
+`.cursor/environment.json`, internal markdown link integrity, and a spelling lane.
+The spelling lane runs typos against the tracked tree, hidden files included, using
+the managed `_typos.toml` (`locale = "en-us"`), and must report zero findings. CI
+deliberately does **not** check external URLs — GitHub and cursor.directory answer
+CI runners with 403/429, which would fail the build for reasons that say nothing
+about the repository.
 Note that GitHub's runners preinstall `pwsh`, so CI exercises both twins even though a
 just-in-time Cloud Agent box may not (`.cursor/install.sh` tries to add `pwsh` on
 Builds; a failure there is tolerated).
 
 The repo-root files synced from `melodic-software/standards` are not re-linted here; they
-are validated upstream, and this repo must not hand-edit them.
+are validated upstream, and this repo must not hand-edit them. The typos lane still
+spell-checks the tracked tree, including `_typos.toml`.
 
 ### Non-obvious caveats
 

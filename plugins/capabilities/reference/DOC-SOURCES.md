@@ -32,7 +32,7 @@ Repo policy: [`docs/PLUGIN-PHILOSOPHY.md`](../../../docs/PLUGIN-PHILOSOPHY.md).
 | Use for | URL | Verified |
 | --- | --- | --- |
 | **Built-in Cursor skills** table; skill directories; which directories load in cloud vs local; custom modes; `/migrate-to-skills` | https://cursor.com/docs/skills | 2026-09-02 |
-| Agent tools (search, web, read/edit, shell, browser, image generation, ask questions), queueing, `/goal` | https://cursor.com/docs/agent/overview | 2026-09-02 |
+| Agent tools (search, web, read/edit, shell, browser, image generation, ask questions), queuing, `/goal` | https://cursor.com/docs/agent/overview | 2026-09-02 |
 | Plan, Debug, Design modes | https://cursor.com/docs/agent/plan-mode · https://cursor.com/docs/agent/debug-mode · https://cursor.com/docs/agent/design-mode | listed in index; not fetched this session |
 | Subagents (built-in and custom) | https://cursor.com/docs/subagents | request timed out on 2026-09-02 — unverified, not dead |
 | CLI slash commands (`/plugin`, `/mcp`, `/shell`, `/goal`, …) | https://cursor.com/docs/cli/reference/slash-commands | 2026-09-02 |

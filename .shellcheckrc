@@ -21,7 +21,7 @@
 #   likewise states a preference, not a requirement. The script's existing mix is
 #   internally consistent - braces where they disambiguate or carry an operator
 #   (`${temp_clone}` inside a larger word, `${#names[@]}`, `${synced_list%, }`),
-#   bare `$name` elsewhere. Enabling it would mean a 101-line no-behaviour diff to
+#   bare `$name` elsewhere. Enabling it would mean a 101-line no-behavior diff to
 #   the repository's only script, and would re-flag every future edit.
 #
 # check-extra-masked-returns (SC2312) - "command substitution masks a return
