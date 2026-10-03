@@ -164,3 +164,20 @@ comment and the `needs-issue-linkage` label, not a red check. Draft the body
 to that shape before opening the pull request: this repository carries no
 local template and inherits the org default from
 [`melodic-software/.github`](https://github.com/melodic-software/.github/blob/main/.github/PULL_REQUEST_TEMPLATE.md).
+
+## Code Review Rules
+
+Each line names a rule CI does not enforce; the linked file states it in full.
+
+- Org-wide criteria: [`REVIEW.md`](https://github.com/melodic-software/standards/blob/main/REVIEW.md) in `melodic-software/standards`.
+- Plugin design boundary: no sibling-plugin imports and no runtime dependence on
+  org names, repos or machine paths: [rule](docs/PLUGIN-PHILOSOPHY.md#design-boundary).
+- No new `commands/` files; procedures ship as skills:
+  [component stances](docs/PLUGIN-PHILOSOPHY.md#component-stances).
+- A `Verified` date moves only on a live fetch that matched; a blocked fetch keeps the old date:
+  [doc conventions](#doc-conventions).
+- A port records its keep/reshape/drop decisions, and one adding MCP or hooks its trust review,
+  in the PR: [migration playbook](docs/MIGRATION-PLAYBOOK.md#mandatory-pre-port-review-keep--reshape--drop).
+- A sync-local defect fix adds a regression case to the twin suite: [test](#test).
+- A PSScriptAnalyzer suppression carries a written Justification:
+  [lint](#lint--validate-there-is-no-configured-linter--use-these-proxies).
