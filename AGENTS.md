@@ -176,7 +176,7 @@ Each line names a rule CI does not enforce; the linked file states it in full.
   [component stances](docs/PLUGIN-PHILOSOPHY.md#component-stances).
 - A `Verified` date moves only on a live fetch that matched; a blocked fetch keeps the old date:
   [doc conventions](#doc-conventions).
-- A port records its keep/reshape/drop decisions in the PR:
+- A port records one PR line per non-trivial reshape or drop decision:
   [pre-port review](docs/MIGRATION-PLAYBOOK.md#mandatory-pre-port-review-keep--reshape--drop).
 - A port or version bump that adds MCP servers or hooks records its trust review (ACCEPT or
   blockers) in the PR: [trust review](docs/MIGRATION-PLAYBOOK.md#trust-review-mcp--hooks).
