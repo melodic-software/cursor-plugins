@@ -2,6 +2,12 @@
 # GitHub-native: no third-party app and no PAT. This repository has no package
 # manager and no application build, so `github-actions` is the only ecosystem
 # with a manifest to read here.
+#
+# Merge lanes follow the standards dependabot-policy component: the
+# `vendor-actions` group (non-major only) is the auto-merge lane armed by
+# pr-automerge-dependabot.yml; every other PR is reviewed by hand. A dependency
+# joins the first group that matches it, so majors fall through to the
+# reviewed `github-actions` group.
 version: 2
 updates:
   - package-ecosystem: github-actions
@@ -20,13 +26,22 @@ updates:
     # required rather than cosmetic.
     commit-message:
       prefix: build
-    # Collapse every action bump into one pull request, so the next
-    # ci-workflows tag arrives as a single reviewable change instead of one
-    # pull request per reference.
+    # Let a brand-new release settle before proposing it (supply-chain caution);
+    # security-advisory updates bypass cooldown and still surface immediately.
+    cooldown:
+      default-days: 3
     groups:
+      vendor-actions:
+        patterns:
+          - actions/*
+          - github/*
+          - anthropics/*
+        update-types: [minor, patch]
       github-actions:
         patterns:
           - '*'
+    # Every melodic-software/ci-workflows ref (reusable workflows AND composite
+    # actions) moves only through deliberate reviewed PRs per the standards
+    # runner-policy selector-revision lockstep, so all of them are ignored here.
     ignore:
-      # The GitHub Actions conventions rename migrates this repo's ci-workflows pins deliberately; remove this ignore at that migration.
       - dependency-name: "melodic-software/ci-workflows/*"
