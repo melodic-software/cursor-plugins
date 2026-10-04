@@ -1,4 +1,4 @@
-name: CI
+name: pr-require-checks
 
 # This repository has no build and no package manager. CI is therefore the
 # lint/validate proxies documented in AGENTS.md, plus the sync-local regression
@@ -69,7 +69,7 @@ permissions:
 #
 # The cost of the branch: a contract-only run no longer queues behind the full
 # run whose `ci-lanes` status it carries forward, so the two race. The
-# `ci-status` composite closes that with a bounded wait on EARLIER incomplete
+# `aggregate-results` composite closes that with a bounded wait on EARLIER incomplete
 # runs on the same head SHA; see `carry-forward-wait-seconds` on the job below.
 #
 # One hazard the branch does not remove, because no concurrency setting both
@@ -88,7 +88,7 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  shell:
+  test-shell:
     name: Shell (shellcheck + regression suite)
     # The contract-only predicate, verbatim (see the `on.pull_request` comment).
     if: ${{ !(github.event.pull_request.head.repo.full_name == github.repository && (contains(fromJSON('["labeled","unlabeled"]'), github.event.action) || (github.event.action == 'edited' && !github.event.changes.base))) }}
@@ -112,7 +112,7 @@ jobs:
       - name: sync-local regression suite
         run: bash scripts/test-sync-local.sh
 
-  powershell:
+  psscriptanalyzer:
     name: PowerShell (PSScriptAnalyzer)
     # The contract-only predicate, verbatim (see the `on.pull_request` comment).
     if: ${{ !(github.event.pull_request.head.repo.full_name == github.repository && (contains(fromJSON('["labeled","unlabeled"]'), github.event.action) || (github.event.action == 'edited' && !github.event.changes.base))) }}
@@ -146,7 +146,7 @@ jobs:
           }
           Write-Host "PSScriptAnalyzer: 0 findings."
 
-  manifests:
+  validate-manifests:
     name: Manifests (JSON + official Cursor schemas)
     # The contract-only predicate, verbatim (see the `on.pull_request` comment).
     if: ${{ !(github.event.pull_request.head.repo.full_name == github.repository && (contains(fromJSON('["labeled","unlabeled"]'), github.event.action) || (github.event.action == 'edited' && !github.event.changes.base))) }}
@@ -192,7 +192,7 @@ jobs:
           curl -fsS https://cursor.com/schemas/environment.schema.json -o environment.schema.json
           node scripts/validate-environment.mjs
 
-  links:
+  check-links:
     name: Docs (internal link integrity)
     # The contract-only predicate, verbatim (see the `on.pull_request` comment).
     if: ${{ !(github.event.pull_request.head.repo.full_name == github.repository && (contains(fromJSON('["labeled","unlabeled"]'), github.event.action) || (github.event.action == 'edited' && !github.event.changes.base))) }}
@@ -242,7 +242,7 @@ jobs:
       # `hidden` exists starting at v0.26.0. The v0.24.0 action has no such input,
       # and without it typos skips `.github/` and `.shellcheckrc`.
       - name: typos (en-us, hidden files included)
-        uses: melodic-software/ci-workflows/.github/actions/typos@35880dcbb2f174aac90159e276dc7eddf1bc20b9 # v0.30.1
+        uses: melodic-software/ci-workflows/.github/actions/typos@7446b5165511796b7b0d30b68d341689ebb8de61 # v0.34.0
         with:
           config: _typos.toml
           hidden: true
@@ -251,7 +251,7 @@ jobs:
   # four contexts the org ci-gate ruleset requires, so every lane above has to
   # reach the gate through this one job name.
   ci-status:
-    needs: [shell, powershell, manifests, links, typos]
+    needs: [test-shell, psscriptanalyzer, validate-manifests, check-links, typos]
     if: ${{ !cancelled() }}
     runs-on: ubuntu-24.04
     timeout-minutes: 5
@@ -262,22 +262,22 @@ jobs:
       # a `ci-lanes` verdict forward. Under an explicit `permissions:` block the
       # default for a scope not listed is none, so the Actions reads would 403.
       actions: read
-      # pr-contract upserts the advisory linkage comment and moves the linkage
+      # check-contract upserts the advisory linkage comment and moves the linkage
       # label; ci-status records the `ci-lanes` commit status the carry-forward
       # branch reads back on the next contract-only event.
       pull-requests: write
       statuses: write
     steps:
       - name: Check the pull-request contract
-        uses: melodic-software/ci-workflows/.github/actions/pr-contract@35880dcbb2f174aac90159e276dc7eddf1bc20b9 # v0.30.1
+        uses: melodic-software/ci-workflows/.github/actions/pr-require-checks/check-contract@7446b5165511796b7b0d30b68d341689ebb8de61 # v0.34.0
         with:
           token: ${{ github.token }}
       - name: Aggregate lane results
-        # `!cancelled()` so a failing pr-contract step does not skip the
+        # `!cancelled()` so a failing check-contract step does not skip the
         # aggregation: the job still fails on the contract step's exit code, and
         # the `ci-lanes` status is on the SHA for the next contract-only run.
         if: ${{ !cancelled() }}
-        uses: melodic-software/ci-workflows/.github/actions/ci-status@35880dcbb2f174aac90159e276dc7eddf1bc20b9 # v0.30.1
+        uses: melodic-software/ci-workflows/.github/actions/pr-require-checks/aggregate-results@7446b5165511796b7b0d30b68d341689ebb8de61 # v0.34.0
         with:
           results: ${{ join(needs.*.result, ' ') }}
           # The replaced inline aggregator passed only `success`, so a `skipped`

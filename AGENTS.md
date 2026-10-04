@@ -118,7 +118,7 @@ and the `scripts/sync-local.*` sync tooling. See `README.md` and
 
 ### CI
 
-`.github/workflows/ci.yml` runs the checks above on every push and pull request: shell
+`.github/workflows/pr-require-checks.yml` runs the checks above on every push and pull request: shell
 lint of `scripts/*.sh` **and** `.cursor/install.sh`, plus the regression suite,
 PSScriptAnalyzer, JSON and schema validation of the manifests and
 `.cursor/environment.json`, internal markdown link integrity, and a spelling lane.
