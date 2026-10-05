@@ -70,7 +70,8 @@ permissions:
 # The cost of the branch: a contract-only run no longer queues behind the full
 # run whose `ci-lanes` status it carries forward, so the two race. The
 # `aggregate-results` composite closes that by failing the contract-only run at
-# once while an earlier full run on the same head SHA is incomplete; see `yield-to-full-run` on the job below.
+# once while an earlier full run on the same head SHA is incomplete; see
+# `yield-to-full-run` on the job below.
 #
 # One hazard the branch does not remove, because no concurrency setting both
 # removes it and keeps supersession: the full branch is keyed on the pull
