@@ -243,7 +243,7 @@ jobs:
       # `hidden` exists starting at v0.26.0. The v0.24.0 action has no such input,
       # and without it typos skips `.github/` and `.shellcheckrc`.
       - name: typos (en-us, hidden files included)
-        uses: melodic-software/ci-workflows/.github/actions/typos@2531d56a21e79b7b5222643fadbee95c23a4525b # v0.38.1
+        uses: melodic-software/ci-workflows/.github/actions/typos@cf316d12b4a14fbdb96a339b7ad00ce935a8cad4 # v0.38.2
         with:
           config: _typos.toml
           hidden: true
@@ -273,7 +273,7 @@ jobs:
       statuses: write
     steps:
       - name: Check the pull-request contract
-        uses: melodic-software/ci-workflows/.github/actions/pr-require-checks/check-contract@2531d56a21e79b7b5222643fadbee95c23a4525b # v0.38.1
+        uses: melodic-software/ci-workflows/.github/actions/pr-require-checks/check-contract@cf316d12b4a14fbdb96a339b7ad00ce935a8cad4 # v0.38.2
         with:
           token: ${{ github.token }}
       - name: Aggregate lane results
@@ -281,7 +281,7 @@ jobs:
         # aggregation: the job still fails on the contract step's exit code, and
         # the `ci-lanes` status is on the SHA for the next contract-only run.
         if: ${{ !cancelled() }}
-        uses: melodic-software/ci-workflows/.github/actions/pr-require-checks/aggregate-results@2531d56a21e79b7b5222643fadbee95c23a4525b # v0.38.1
+        uses: melodic-software/ci-workflows/.github/actions/pr-require-checks/aggregate-results@cf316d12b4a14fbdb96a339b7ad00ce935a8cad4 # v0.38.2
         with:
           results: ${{ join(needs.*.result, ' ') }}
           # The replaced inline aggregator passed only `success`, so a `skipped`
