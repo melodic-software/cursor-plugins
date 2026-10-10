@@ -20,7 +20,9 @@ case "${1:-}" in
   ;;
 esac
 
-cd "${BASH_SOURCE[0]%/*}/.." || exit 2
+src_dir="${BASH_SOURCE[0]%/*}"
+[[ "$src_dir" == "${BASH_SOURCE[0]}" ]] && src_dir=.
+cd "$src_dir/.." || exit 2
 git rev-parse --show-toplevel >/dev/null 2>&1 || {
   printf 'check-docs-naming: not inside a git repository\n' >&2
   exit 2

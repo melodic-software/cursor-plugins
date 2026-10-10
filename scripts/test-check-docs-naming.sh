@@ -4,7 +4,9 @@
 # Exit:  0 all cases passed, 1 otherwise.
 set -euo pipefail
 
-sut="$(cd "${BASH_SOURCE[0]%/*}" && pwd)/check-docs-naming.sh"
+src_dir="${BASH_SOURCE[0]%/*}"
+[[ "$src_dir" == "${BASH_SOURCE[0]}" ]] && src_dir=.
+sut="$(cd "$src_dir" && pwd)/check-docs-naming.sh"
 work="$(mktemp -d "${TMPDIR:-/tmp}/docs-naming-tests.XXXXXX")"
 trap 'rm -rf "$work"' EXIT
 fail=0
@@ -38,6 +40,7 @@ run_case snake-case 1 snake_case.md
 run_case empty-segment 1 foo..md
 run_case nested-offender 1 sub/Bad-Name.md
 run_case nested-exempt 0 sub/README.md sub/SKILL.md
+run_case dir-case-collision 1 Guides/a.md guides/a.md
 run_case reference-offender 1 ../plugins/p/reference/DOC-SOURCES.md
 
 exit "$fail"
