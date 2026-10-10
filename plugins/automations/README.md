@@ -10,7 +10,7 @@ the cross-cutting seams (plan gates, repository scope, identity, config binding,
 concurrency, guardrails): [`reference/LANES.md`](reference/LANES.md).
 
 Melodic policy (skills primary; no `commands/`):
-[`docs/PLUGIN-PHILOSOPHY.md`](../../docs/PLUGIN-PHILOSOPHY.md).
+[`docs/plugin-philosophy.md`](../../docs/plugin-philosophy.md).
 
 ## Skills
 

@@ -14,8 +14,8 @@ description: Validate a Cursor plugin or marketplace checkout against live offic
    - https://raw.githubusercontent.com/cursor/plugins/main/schemas/plugin.schema.json
 4. Related pages from `plugins/plugin-ops/reference/DOC-SOURCES.md` if hooks/MCP/rules/skills are present
 5. Melodic policy pointers (not Cursor requirements):
-   - `docs/PLUGIN-PHILOSOPHY.md`
-   - `docs/MIGRATION-PLAYBOOK.md`
+   - `docs/plugin-philosophy.md`
+   - `docs/migration-playbook.md`
 
 Build the Cursor checklist from **fetched** docs, not from memory.
 

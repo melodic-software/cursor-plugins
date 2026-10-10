@@ -1,9 +1,9 @@
 # Plugin philosophy (Cursor)
 
 Durable design policy for plugins in this marketplace. The
-[migration playbook](MIGRATION-PLAYBOOK.md) applies it when porting from
+[migration playbook](migration-playbook.md) applies it when porting from
 [`claude-code-plugins`](https://github.com/melodic-software/claude-code-plugins).
-Official URL pointers live in [OFFICIAL-DOCS.md](OFFICIAL-DOCS.md) — **fetch live;
+Official URL pointers live in [official-docs.md](official-docs.md) — **fetch live;
 never treat this file as a procedure cache.**
 
 ## Design boundary
@@ -31,7 +31,7 @@ runtime. Do not auto-export Cursor artifacts into `claude-code-plugins`.
 Before advising on install, update, marketplace layout, component format, or
 changing a stance row below:
 
-1. Fetch the relevant pages from [OFFICIAL-DOCS.md](OFFICIAL-DOCS.md) /
+1. Fetch the relevant pages from [official-docs.md](official-docs.md) /
    [`plugins/plugin-ops/reference/DOC-SOURCES.md`](../plugins/plugin-ops/reference/DOC-SOURCES.md).
 2. Prefer the fetched page over this file, training data, or prior chat memory.
 3. If a fetch diverges from a stance row, update the row and its verified date.
@@ -128,6 +128,6 @@ native one matures.
 
 ## Related
 
-- [MIGRATION-PLAYBOOK.md](MIGRATION-PLAYBOOK.md) — port gates and acceptance
-- [OFFICIAL-DOCS.md](OFFICIAL-DOCS.md) — URL jump sheet
+- [migration-playbook.md](migration-playbook.md) — port gates and acceptance
+- [official-docs.md](official-docs.md) — URL jump sheet
 - [`plugin-ops`](../plugins/plugin-ops/README.md) — install / update / sync / verify skills

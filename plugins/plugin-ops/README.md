@@ -6,7 +6,7 @@ Skills **fetch official Cursor docs live** before advising — see
 [`reference/DOC-SOURCES.md`](reference/DOC-SOURCES.md).
 
 Melodic policy (skills primary; no new `commands/`):  
-[`docs/PLUGIN-PHILOSOPHY.md`](../../docs/PLUGIN-PHILOSOPHY.md).
+[`docs/plugin-philosophy.md`](../../docs/plugin-philosophy.md).
 
 ## Skills
 

@@ -12,7 +12,7 @@ description: Update installed Cursor plugins/marketplaces for the user's plan. F
 3. https://cursor.com/docs/reference/plugins — only if validating marketplace layout after a pull
 
 `plugins/plugin-ops/reference/DOC-SOURCES.md` lists URLs. **Docs win.**
-Melodic policy: `docs/PLUGIN-PHILOSOPHY.md`.
+Melodic policy: `docs/plugin-philosophy.md`.
 
 **Verified 2026-08-30.** The string `/add-plugin` does not appear in the current docs,
 but the capability was renamed, not removed: `/plugin marketplace add <git-url>`

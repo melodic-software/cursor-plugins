@@ -5,7 +5,7 @@ ships; it fetches these pages and inspects the machine it is running on, then re
 what exists **today**. A built-in skill, tool, integration, or plan limit named anywhere
 in this repository is an observation with a date, never a fact to reuse.
 
-Repo policy: [`docs/PLUGIN-PHILOSOPHY.md`](../../../docs/PLUGIN-PHILOSOPHY.md).
+Repo policy: [`docs/plugin-philosophy.md`](../../../docs/plugin-philosophy.md).
 
 ## Read order
 

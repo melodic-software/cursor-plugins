@@ -10,8 +10,8 @@ Skills under `plugins/plugin-ops/` **fetch these pages live** before advising.
 > its verified date. Skill-facing copy of the URL list:
 > [`plugins/plugin-ops/reference/DOC-SOURCES.md`](../plugins/plugin-ops/reference/DOC-SOURCES.md).
 
-Policy: [PLUGIN-PHILOSOPHY.md](PLUGIN-PHILOSOPHY.md).  
-Ports: [MIGRATION-PLAYBOOK.md](MIGRATION-PLAYBOOK.md).
+Policy: [plugin-philosophy.md](plugin-philosophy.md).  
+Ports: [migration-playbook.md](migration-playbook.md).
 
 ## Plugin components → doc page
 
@@ -77,7 +77,7 @@ edited that day".
 
 Ideas may come from [`melodic-software/claude-code-plugins`](https://github.com/melodic-software/claude-code-plugins).
 Manifests and runtime here are Cursor-only. Do not treat Claude “commands merged /
-prohibited” as Cursor platform law — see [PLUGIN-PHILOSOPHY.md](PLUGIN-PHILOSOPHY.md).
+prohibited” as Cursor platform law — see [plugin-philosophy.md](plugin-philosophy.md).
 
 | Topic | Official Claude doc |
 | --- | --- |
