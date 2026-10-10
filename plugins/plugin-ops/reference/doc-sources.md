@@ -4,8 +4,8 @@ Skills in this plugin **must not** invent install/update UI steps from memory.
 Before advising, fetch the current pages.
 
 Repo jump sheet (same URLs + Melodic stance notes):
-[`docs/OFFICIAL-DOCS.md`](../../../docs/OFFICIAL-DOCS.md).
-Policy: [`docs/PLUGIN-PHILOSOPHY.md`](../../../docs/PLUGIN-PHILOSOPHY.md).
+[`docs/official-docs.md`](../../../docs/official-docs.md).
+Policy: [`docs/plugin-philosophy.md`](../../../docs/plugin-philosophy.md).
 
 | Topic | URL |
 | --- | --- |

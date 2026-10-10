@@ -6,7 +6,7 @@ This repository is a **Cursor plugin marketplace** (not a compiled application).
 contains Markdown docs, JSON manifests (`.cursor-plugin/marketplace.json`,
 `plugins/<name>/.cursor-plugin/plugin.json`), plugin skills (`skills/<name>/SKILL.md`),
 and the `scripts/sync-local.*` sync tooling. See `README.md` and
-`docs/PLUGIN-PHILOSOPHY.md` for the full model.
+`docs/plugin-philosophy.md` for the full model.
 
 ### Environment / dependencies
 
@@ -98,21 +98,25 @@ and the `scripts/sync-local.*` sync tooling. See `README.md` and
  automation lane and write a source-controlled record) and `plugins/capabilities`
  (inventory what a session can already do). Exercising them means running the skill in an
  agent session; there is nothing to execute from a shell. Each keeps its own live-doc
- index at `plugins/<name>/reference/DOC-SOURCES.md`, tiered by authority and dated by
- live fetch under the same "Verified means fetched" rule as `docs/OFFICIAL-DOCS.md`.
+ index at `plugins/<name>/reference/doc-sources.md`, tiered by authority and dated by
+ live fetch under the same "Verified means fetched" rule as `docs/official-docs.md`.
 
 ### Doc conventions
 
 - **How to cite a repo path in Markdown.** In human-facing files — `README.md`,
   `docs/*.md`, `plugins/*/README.md`, `plugins/*/reference/*.md` — cite a repo file as a
   **resolvable relative link** — from `plugins/plugin-ops/README.md` that is
-  `[docs/PLUGIN-PHILOSOPHY.md]` followed by `(../../docs/PLUGIN-PHILOSOPHY.md)` — so it
+  `[docs/plugin-philosophy.md]` followed by `(../../docs/plugin-philosophy.md)` — so it
   renders as a working link on GitHub. Inside a `SKILL.md` **body** the reader is an
   agent with the repo checked out, so a bare repo-root-relative code span —
-  `docs/PLUGIN-PHILOSOPHY.md` — is the convention, the same one this file uses. Pick the
+  `docs/plugin-philosophy.md` — is the convention, the same one this file uses. Pick the
   style from the file's kind and do not mix the two within one file.
-- Doc dates (`Verified` columns in `docs/OFFICIAL-DOCS.md` and
-  `docs/PLUGIN-PHILOSOPHY.md`) mean "a live fetch of that URL still matched this row on
+- **Name `docs/` and `plugins/*/reference/` files in lower-kebab-case.** The exceptions are the conventional names
+  `README`, `AGENTS`, `CLAUDE`, `CHANGELOG`, `LICENSE`, `SKILL`, `CONTRIBUTING`,
+  `SECURITY`, `REVIEW` and `CODE_OF_CONDUCT`. `bash scripts/check-docs-naming.sh --check`
+  enforces it in CI.
+- Doc dates (`Verified` columns in `docs/official-docs.md` and
+  `docs/plugin-philosophy.md`) mean "a live fetch of that URL still matched this row on
   that date". Never bump one without fetching. A 403/429 is a blocked fetch, not a
   verification and not a dead link — record it as blocked and leave the old date.
 
@@ -175,15 +179,15 @@ Each line names a rule CI does not enforce; the linked file states it in full.
 
 - Org-wide criteria: [`REVIEW.md`](https://github.com/melodic-software/standards/blob/main/REVIEW.md) in `melodic-software/standards`.
 - Plugin design boundary: no sibling-plugin imports and no runtime dependence on
-  org names, repos or machine paths: [rule](docs/PLUGIN-PHILOSOPHY.md#design-boundary).
+  org names, repos or machine paths: [rule](docs/plugin-philosophy.md#design-boundary).
 - No new `commands/` files; procedures ship as skills:
-  [component stances](docs/PLUGIN-PHILOSOPHY.md#component-stances).
+  [component stances](docs/plugin-philosophy.md#component-stances).
 - A `Verified` date moves only on a live fetch that matched; a blocked fetch keeps the old date:
   [doc conventions](#doc-conventions).
 - A port records one PR line per non-trivial reshape or drop decision:
-  [pre-port review](docs/MIGRATION-PLAYBOOK.md#mandatory-pre-port-review-keep--reshape--drop).
+  [pre-port review](docs/migration-playbook.md#mandatory-pre-port-review-keep--reshape--drop).
 - A port or version bump that adds MCP servers or hooks records its trust review (ACCEPT or
-  blockers) in the PR: [trust review](docs/MIGRATION-PLAYBOOK.md#trust-review-mcp--hooks).
+  blockers) in the PR: [trust review](docs/migration-playbook.md#trust-review-mcp--hooks).
 - A sync-local defect fix adds a regression case to the twin suite: [test](#test).
 - A PSScriptAnalyzer suppression carries a written Justification:
   [lint](#lint--validate-there-is-no-configured-linter--use-these-proxies).

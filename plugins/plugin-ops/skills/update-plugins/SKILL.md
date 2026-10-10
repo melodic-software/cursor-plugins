@@ -11,8 +11,8 @@ description: Update installed Cursor plugins/marketplaces for the user's plan. F
 2. https://cursor.com/docs/integrations/github — GitHub App requirement for Auto Refresh
 3. https://cursor.com/docs/reference/plugins — only if validating marketplace layout after a pull
 
-`plugins/plugin-ops/reference/DOC-SOURCES.md` lists URLs. **Docs win.**
-Melodic policy: `docs/PLUGIN-PHILOSOPHY.md`.
+`plugins/plugin-ops/reference/doc-sources.md` lists URLs. **Docs win.**
+Melodic policy: `docs/plugin-philosophy.md`.
 
 **Verified 2026-08-30.** The string `/add-plugin` does not appear in the current docs,
 but the capability was renamed, not removed: `/plugin marketplace add <git-url>`

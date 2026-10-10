@@ -8,10 +8,10 @@ Skills under `plugins/plugin-ops/` **fetch these pages live** before advising.
 > content as procedures. When docs and this repo disagree, **docs win**. A fetch
 > that no longer matches a row is that row’s recheck trigger: update the row and
 > its verified date. Skill-facing copy of the URL list:
-> [`plugins/plugin-ops/reference/DOC-SOURCES.md`](../plugins/plugin-ops/reference/DOC-SOURCES.md).
+> [`plugins/plugin-ops/reference/doc-sources.md`](../plugins/plugin-ops/reference/doc-sources.md).
 
-Policy: [PLUGIN-PHILOSOPHY.md](PLUGIN-PHILOSOPHY.md).  
-Ports: [MIGRATION-PLAYBOOK.md](MIGRATION-PLAYBOOK.md).
+Policy: [plugin-philosophy.md](plugin-philosophy.md).  
+Ports: [migration-playbook.md](migration-playbook.md).
 
 ## Plugin components → doc page
 
@@ -56,15 +56,15 @@ Those concerns have their own tiered source indexes, owned by the plugin that re
 
 | Concern | Index |
 | --- | --- |
-| Automations, cloud agent runtime, trigger sources, managed agents, programmatic lanes | [`plugins/automations/reference/DOC-SOURCES.md`](../plugins/automations/reference/DOC-SOURCES.md) |
-| Built-in skills, agent tools, plugins, MCP, integrations, plan gates | [`plugins/capabilities/reference/DOC-SOURCES.md`](../plugins/capabilities/reference/DOC-SOURCES.md) |
+| Automations, cloud agent runtime, trigger sources, managed agents, programmatic lanes | [`plugins/automations/reference/doc-sources.md`](../plugins/automations/reference/doc-sources.md) |
+| Built-in skills, agent tools, plugins, MCP, integrations, plan gates | [`plugins/capabilities/reference/doc-sources.md`](../plugins/capabilities/reference/doc-sources.md) |
 
 Both start from the live page index https://cursor.com/docs/llms.txt (verified 2026-09-02),
 which is the self-healing root for every URL in this repository.
 
 Optional community index (not official): https://cursor.directory — **blocked**,
 HTTP 429 via proxy on 2026-08-30 (rate limit, not a dead link; see
-[DOC-SOURCES fetch status](../plugins/plugin-ops/reference/DOC-SOURCES.md#fetch-status-2026-09-02)).
+[doc-sources fetch status](../plugins/plugin-ops/reference/doc-sources.md#fetch-status-2026-09-02)).
 
 Rows dated **2026-09-02** were re-fetched this session and still matched.
 `https://cursor.com/help/customization/skills` timed out on 2026-09-02: leave
@@ -77,7 +77,7 @@ edited that day".
 
 Ideas may come from [`melodic-software/claude-code-plugins`](https://github.com/melodic-software/claude-code-plugins).
 Manifests and runtime here are Cursor-only. Do not treat Claude “commands merged /
-prohibited” as Cursor platform law — see [PLUGIN-PHILOSOPHY.md](PLUGIN-PHILOSOPHY.md).
+prohibited” as Cursor platform law — see [plugin-philosophy.md](plugin-philosophy.md).
 
 | Topic | Official Claude doc |
 | --- | --- |

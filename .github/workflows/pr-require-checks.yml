@@ -113,6 +113,12 @@ jobs:
       - name: sync-local regression suite
         run: bash scripts/test-sync-local.sh
 
+      - name: docs-naming regression suite
+        run: bash scripts/test-check-docs-naming.sh
+
+      - name: docs/ filenames are lower-kebab-case
+        run: bash scripts/check-docs-naming.sh --check
+
   psscriptanalyzer:
     name: PowerShell (PSScriptAnalyzer)
     # The contract-only predicate, verbatim (see the `on.pull_request` comment).

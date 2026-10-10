@@ -6,8 +6,8 @@ a trigger, tool, setting, or plan limit behaves — that text lives upstream and
 without notice. When a fetched page and anything in this repo disagree, **the page
 wins**, and the disagreement is the trigger to update this index.
 
-Repo policy: [`docs/PLUGIN-PHILOSOPHY.md`](../../../docs/PLUGIN-PHILOSOPHY.md).
-Lane model this index serves: [`LANES.md`](LANES.md).
+Repo policy: [`docs/plugin-philosophy.md`](../../../docs/plugin-philosophy.md).
+Lane model this index serves: [`lanes.md`](lanes.md).
 
 ## Read order
 

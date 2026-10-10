@@ -4,8 +4,8 @@ This repo is the **Cursor-native** Melodic marketplace. It is intentionally
 separate from
 [`melodic-software/claude-code-plugins`](https://github.com/melodic-software/claude-code-plugins).
 
-Design policy SSOT: [PLUGIN-PHILOSOPHY.md](PLUGIN-PHILOSOPHY.md).  
-Official URL pointers: [OFFICIAL-DOCS.md](OFFICIAL-DOCS.md) (fetch live).
+Design policy SSOT: [plugin-philosophy.md](plugin-philosophy.md).  
+Official URL pointers: [official-docs.md](official-docs.md) (fetch live).
 
 Do **not** dual-read Claude manifests at runtime. Do **not** regenerate
 `.cursor-plugin/` from Claude plugins as a continuous export into the Claude
@@ -32,7 +32,7 @@ repo. Migrate and adapt here.
 ## Mandatory pre-port review (keep / reshape / drop)
 
 For **every** Claude component before copying files, decide using live Cursor
-docs + [PLUGIN-PHILOSOPHY.md](PLUGIN-PHILOSOPHY.md) stances:
+docs + [plugin-philosophy.md](plugin-philosophy.md) stances:
 
 | Claude surface | Default decision | Notes |
 | --- | --- | --- |
@@ -72,7 +72,7 @@ For each Claude plugin you choose to port:
    `minClientVersions` — narrower than the "Plugin entry fields" table in the plugins
    reference, so validate against `marketplace.schema.json`, not the prose table.
 7. **Acceptance gates** (all required before merge):
-   - Component-stance check against [PLUGIN-PHILOSOPHY.md](PLUGIN-PHILOSOPHY.md)
+   - Component-stance check against [plugin-philosophy.md](plugin-philosophy.md)
    - Live verify via `verify-plugin` skill (Cursor checklist + Melodic policy)
    - Local sync into `~/.cursor/plugins/local/<name>/` (real copy) and
      **Developer: Reload Window**

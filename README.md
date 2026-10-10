@@ -12,9 +12,9 @@ runtime behavior here are Cursor-only.
 
 | Doc | Purpose |
 | --- | --- |
-| [docs/PLUGIN-PHILOSOPHY.md](docs/PLUGIN-PHILOSOPHY.md) | Component stances, skills-first policy, Claude vs Cursor |
-| [docs/MIGRATION-PLAYBOOK.md](docs/MIGRATION-PLAYBOOK.md) | Port gates from Claude → Cursor |
-| [docs/OFFICIAL-DOCS.md](docs/OFFICIAL-DOCS.md) | Official URL jump sheet (fetch live; not a procedure cache) |
+| [docs/plugin-philosophy.md](docs/plugin-philosophy.md) | Component stances, skills-first policy, Claude vs Cursor |
+| [docs/migration-playbook.md](docs/migration-playbook.md) | Port gates from Claude → Cursor |
+| [docs/official-docs.md](docs/official-docs.md) | Official URL jump sheet (fetch live; not a procedure cache) |
 
 ## Layout
 
@@ -25,9 +25,9 @@ plugins/<name>/
   skills/                         # primary capability surface
   agents/ | rules/ | hooks/ | mcp.json   # adopt on need
 scripts/sync-local.*              # sync any path/URL into ~/.cursor/plugins/local
-docs/PLUGIN-PHILOSOPHY.md
-docs/MIGRATION-PLAYBOOK.md
-docs/OFFICIAL-DOCS.md
+docs/plugin-philosophy.md
+docs/migration-playbook.md
+docs/official-docs.md
 ```
 
 Skills are the primary surface (they appear in Agent `/`). Do not add new
@@ -84,8 +84,8 @@ Plan cheat-sheet (always re-check live docs):
 
 ## Contributing
 
-1. Follow [docs/PLUGIN-PHILOSOPHY.md](docs/PLUGIN-PHILOSOPHY.md); fetch live docs via [docs/OFFICIAL-DOCS.md](docs/OFFICIAL-DOCS.md) / `plugin-ops`.
-2. Port Claude ideas via [docs/MIGRATION-PLAYBOOK.md](docs/MIGRATION-PLAYBOOK.md).
+1. Follow [docs/plugin-philosophy.md](docs/plugin-philosophy.md); fetch live docs via [docs/official-docs.md](docs/official-docs.md) / `plugin-ops`.
+2. Port Claude ideas via [docs/migration-playbook.md](docs/migration-playbook.md).
 3. Open a PR against `main`.
 
 ## Governance

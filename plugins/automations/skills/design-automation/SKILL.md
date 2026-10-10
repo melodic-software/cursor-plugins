@@ -15,14 +15,14 @@ gap with an assumption, and never state a platform fact you did not read this se
    page this skill names, because pages move.
 2. Fetch https://cursor.com/docs/automations and read *Triggers*, *Tools*, *Automation
    settings* (Repositories, Permissions, Identity), *Billing*, and *Writing prompts*.
-3. Open `plugins/automations/reference/LANES.md`, pick the candidate lanes, and fetch the
+3. Open `plugins/automations/reference/lanes.md`, pick the candidate lanes, and fetch the
    pages its catalog names for them (managed agents, integrations, API, CLI).
 4. Fetch the plan gate on the **feature page** for anything gated (Jira, Team Rules,
    Team Owned scope, marketplaces, managed agents).
 5. State the fetch date in your reply. If a page times out or returns 403/429, say it is
    unverified; do not fall back to memory.
 
-Source policy and tiers: `plugins/automations/reference/DOC-SOURCES.md`. Docs win over
+Source policy and tiers: `plugins/automations/reference/doc-sources.md`. Docs win over
 this skill, over training data, and over any blog.
 
 ## Discover before you ask
@@ -61,7 +61,7 @@ lands in the decision record. Minimum set, skipping anything discovery already a
    section as fetched. Default to the fewest.
 7. **Config keys.** Every consumer-specific value the prompt needs (field ids, state
    names, rosters, prefixes) as a **named key**, and which binding channel the consumer
-   will use (see *Config binding* in `LANES.md`).
+   will use (see *Config binding* in `lanes.md`).
 8. **Quality bar.** When to open a PR, when to comment, when to do nothing.
 9. **Output.** What artifact the world should see, in what format, where.
 10. **Failure and idempotency.** What to do on partial state, on a re-fire, on missing
@@ -71,7 +71,7 @@ lands in the decision record. Minimum set, skipping anything discovery already a
 
 ## Choose the lane
 
-Apply *Selection order* from `plugins/automations/reference/LANES.md` top-down and stop
+Apply *Selection order* from `plugins/automations/reference/lanes.md` top-down and stop
 at the first fit. Hard requirements come first: a consumer who *requires* deterministic
 surrounding steps, a `.github/workflows` definition, or orchestration from their own
 system gets `api-and-cli` before any trigger is considered. Next, a managed agent
@@ -104,7 +104,7 @@ order:
    bound (env var name, rule name, MCP lookup).
 3. Procedure as numbered steps, each verifiable.
 4. Decision rules: the do-nothing conditions first, then act conditions.
-5. Guardrails from *Guardrails baked into every generated prompt* in `LANES.md`, adapted
+5. Guardrails from *Guardrails baked into every generated prompt* in `lanes.md`, adapted
    to the lane, never removed.
 6. Idempotency rule: inspect current state first; update or stop if the outcome already
    exists.
