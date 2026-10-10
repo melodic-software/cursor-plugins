@@ -6,7 +6,7 @@ Cursor-managed agents, integrations, installed plugins and skills, MCP servers â
 surface (IDE, CLI, cloud agent, automation) and plan in use.
 
 The plugin holds pointers and procedure, never a copied list. Sources and read order:
-[`reference/DOC-SOURCES.md`](reference/DOC-SOURCES.md). Melodic policy (skills primary;
+[`reference/doc-sources.md`](reference/doc-sources.md). Melodic policy (skills primary;
 no `commands/`): [`docs/plugin-philosophy.md`](../../docs/plugin-philosophy.md).
 
 ## Skills

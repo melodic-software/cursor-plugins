@@ -26,7 +26,7 @@ last.
 7. Skim https://cursor.com/changelog for capabilities newer than the docs.
 8. State the fetch date. Anything that timed out or returned 403/429 is unverified; say so.
 
-Index, tiers, and expansion rule: `plugins/capabilities/reference/DOC-SOURCES.md`.
+Index, tiers, and expansion rule: `plugins/capabilities/reference/doc-sources.md`.
 
 ## Establish surface and plan
 

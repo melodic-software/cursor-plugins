@@ -7,7 +7,7 @@ without notice. When a fetched page and anything in this repo disagree, **the pa
 wins**, and the disagreement is the trigger to update this index.
 
 Repo policy: [`docs/plugin-philosophy.md`](../../../docs/plugin-philosophy.md).
-Lane model this index serves: [`LANES.md`](LANES.md).
+Lane model this index serves: [`lanes.md`](lanes.md).
 
 ## Read order
 

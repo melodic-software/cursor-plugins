@@ -9,7 +9,7 @@ description: Sync any Cursor plugin or marketplace (local path or git URL) into 
 
 1. Fetch https://cursor.com/docs/plugins — especially **Test plugins locally**.
 2. Fetch https://cursor.com/docs/reference/plugins — marketplace vs single-plugin layout.
-3. Follow `plugins/plugin-ops/reference/DOC-SOURCES.md` for the full URL list.
+3. Follow `plugins/plugin-ops/reference/doc-sources.md` for the full URL list.
 4. Prefer live docs over this skill if they disagree.
 5. Melodic policy: `docs/plugin-philosophy.md` (skills primary; no `commands/` layer for this workflow).
 

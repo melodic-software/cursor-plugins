@@ -38,5 +38,6 @@ run_case snake-case 1 snake_case.md
 run_case empty-segment 1 foo..md
 run_case nested-offender 1 sub/Bad-Name.md
 run_case nested-exempt 0 sub/README.md sub/SKILL.md
+run_case reference-offender 1 ../plugins/p/reference/DOC-SOURCES.md
 
 exit "$fail"

@@ -32,7 +32,7 @@ Before advising on install, update, marketplace layout, component format, or
 changing a stance row below:
 
 1. Fetch the relevant pages from [official-docs.md](official-docs.md) /
-   [`plugins/plugin-ops/reference/DOC-SOURCES.md`](../plugins/plugin-ops/reference/DOC-SOURCES.md).
+   [`plugins/plugin-ops/reference/doc-sources.md`](../plugins/plugin-ops/reference/doc-sources.md).
 2. Prefer the fetched page over this file, training data, or prior chat memory.
 3. If a fetch diverges from a stance row, update the row and its verified date.
 

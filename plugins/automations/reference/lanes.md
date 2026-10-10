@@ -2,7 +2,7 @@
 
 A **lane** is one trigger source, one responsibility, one kind of output. It is the unit
 this plugin designs, stores, and reviews. Lanes are chosen from what the platform offers
-**today**, read from the pages in [`DOC-SOURCES.md`](DOC-SOURCES.md); this file only
+**today**, read from the pages in [`doc-sources.md`](doc-sources.md); this file only
 names the lanes, says which pages decide each one, and fixes the selection order.
 
 Every statement below that names a concrete trigger, tool, setting, or limit is an
@@ -112,7 +112,7 @@ their plan offers. Channels, in preference order, with the page that documents e
 
 ### Concurrency and idempotency
 
-Staff statements (Tier 3, see `DOC-SOURCES.md`): scheduled fires are skipped while a run
+Staff statements (Tier 3, see `doc-sources.md`): scheduled fires are skipped while a run
 of the same automation is active; manual runs have no guard; event triggers are not
 described. Team-wide concurrent-agent and on-demand spend limits block runs. Therefore
 every prompt states its idempotency rule explicitly: **inspect current state before

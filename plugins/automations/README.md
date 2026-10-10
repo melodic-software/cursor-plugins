@@ -5,9 +5,9 @@ keep the prompt in source control while the platform has no config-as-code.
 
 Skills **fetch official Cursor docs live** before stating any platform fact; the plugin
 holds pointers and procedure, never copied documentation. Sources and their read order:
-[`reference/DOC-SOURCES.md`](reference/DOC-SOURCES.md). Lane model, selection order, and
+[`reference/doc-sources.md`](reference/doc-sources.md). Lane model, selection order, and
 the cross-cutting seams (plan gates, repository scope, identity, config binding,
-concurrency, guardrails): [`reference/LANES.md`](reference/LANES.md).
+concurrency, guardrails): [`reference/lanes.md`](reference/lanes.md).
 
 Melodic policy (skills primary; no `commands/`):
 [`docs/plugin-philosophy.md`](../../docs/plugin-philosophy.md).

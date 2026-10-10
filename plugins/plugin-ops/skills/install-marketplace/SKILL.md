@@ -13,7 +13,7 @@ Before any recommendation, fetch and skim:
 2. https://cursor.com/docs/reference/plugins — multi-plugin `marketplace.json` shape
 3. https://cursor.com/docs/integrations/github — only if Team Auto Refresh / GitHub App comes up
 
-Use `plugins/plugin-ops/reference/DOC-SOURCES.md`. **Docs win** over this skill.
+Use `plugins/plugin-ops/reference/doc-sources.md`. **Docs win** over this skill.
 Melodic policy: `docs/plugin-philosophy.md`.
 
 **Verified 2026-08-30.** The literal string `/add-plugin` does not appear anywhere in

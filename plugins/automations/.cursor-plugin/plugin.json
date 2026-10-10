@@ -1,6 +1,6 @@
 {
   "name": "automations",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Design Cursor Automations lane by lane — trigger source, runtime, tools, identity, config seams, guardrails — and record the prompt in source control. Every platform fact is read from live official docs, never from a cached copy.",
   "author": {
     "name": "Melodic Software",

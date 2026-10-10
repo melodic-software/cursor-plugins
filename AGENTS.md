@@ -98,7 +98,7 @@ and the `scripts/sync-local.*` sync tooling. See `README.md` and
  automation lane and write a source-controlled record) and `plugins/capabilities`
  (inventory what a session can already do). Exercising them means running the skill in an
  agent session; there is nothing to execute from a shell. Each keeps its own live-doc
- index at `plugins/<name>/reference/DOC-SOURCES.md`, tiered by authority and dated by
+ index at `plugins/<name>/reference/doc-sources.md`, tiered by authority and dated by
  live fetch under the same "Verified means fetched" rule as `docs/official-docs.md`.
 
 ### Doc conventions
@@ -111,7 +111,7 @@ and the `scripts/sync-local.*` sync tooling. See `README.md` and
   agent with the repo checked out, so a bare repo-root-relative code span —
   `docs/plugin-philosophy.md` — is the convention, the same one this file uses. Pick the
   style from the file's kind and do not mix the two within one file.
-- **Name `docs/` files in lower-kebab-case.** The exceptions are the conventional names
+- **Name `docs/` and `plugins/*/reference/` files in lower-kebab-case.** The exceptions are the conventional names
   `README`, `AGENTS`, `CLAUDE`, `CHANGELOG`, `LICENSE`, `SKILL`, `CONTRIBUTING`,
   `SECURITY`, `REVIEW` and `CODE_OF_CONDUCT`. `bash scripts/check-docs-naming.sh --check`
   enforces it in CI.
