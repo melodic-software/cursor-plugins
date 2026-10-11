@@ -125,7 +125,9 @@ and the `scripts/sync-local.*` sync tooling. See `README.md` and
 `.github/workflows/pr-require-checks.yml` runs the checks above on every push and pull request: shell
 lint of `scripts/*.sh` **and** `.cursor/install.sh`, plus the regression suite,
 PSScriptAnalyzer, JSON and schema validation of the manifests and
-`.cursor/environment.json`, internal markdown link integrity, and a spelling lane.
+`.cursor/environment.json`, internal markdown link integrity (a relative-link
+check plus an offline lychee check of links and anchors against `lychee.toml`),
+and a spelling lane.
 The spelling lane runs typos against the tracked tree, hidden files included, using
 the managed `_typos.toml` (`locale = "en-us"`), and must report zero findings. CI
 deliberately does **not** check external URLs — GitHub and cursor.directory answer
