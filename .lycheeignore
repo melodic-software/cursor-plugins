@@ -1,0 +1,9 @@
+# Repo-local link-check exceptions. Each entry is an exact URL verified alive
+# and failing only because the publisher refuses automated clients. Shared
+# excludes live in lychee.toml (synced from melodic-software/standards).
+
+# cursor.directory answers 429 with `X-Vercel-Mitigated: challenge` (a Vercel
+# bot checkpoint, not a rate limit) to lychee, curl and a browser User-Agent;
+# a JavaScript-rendering fetch returned the live plugin index (verified
+# 2026-10-11).
+^https://cursor\.directory/?$
