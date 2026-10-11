@@ -220,6 +220,8 @@ jobs:
       - name: Every relative markdown link resolves on disk
         run: |
           status=0
+          # The sed backticks are literal code-span delimiters, not expansions.
+          # shellcheck disable=SC2016
           while IFS= read -r src; do
             dir=$(dirname "$src")
             while IFS= read -r link; do
@@ -235,6 +237,25 @@ jobs:
                      sed 's/^](//; s/)$//')
           done < <(git ls-files '*.md')
           exit $status
+
+  # Offline lychee adds anchor and reference-link checks the job above lacks.
+  # The job above stays: lychee's `**/*.md` glob skips dot-directories, which
+  # `git ls-files` covers.
+  lychee:
+    name: Offline links
+    # The contract-only predicate, verbatim (see the `on.pull_request` comment).
+    if: ${{ !(github.event.pull_request.head.repo.full_name == github.repository && (contains(fromJSON('["labeled","unlabeled"]'), github.event.action) || (github.event.action == 'edited' && !github.event.changes.base))) }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - name: Check out
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Check local links and anchors
+        uses: melodic-software/ci-workflows/.github/actions/lychee-offline@594987abe8657a40bccc13d301f1f0d5cccb5348 # v0.39.8
+        with:
+          config: lychee.toml
 
   typos:
     name: Spelling (typos, en-us)
@@ -258,7 +279,7 @@ jobs:
   # four contexts the org ci-gate ruleset requires, so every lane above has to
   # reach the gate through this one job name.
   ci-status:
-    needs: [test-shell, psscriptanalyzer, validate-manifests, check-links, typos]
+    needs: [test-shell, psscriptanalyzer, validate-manifests, check-links, lychee, typos]
     if: ${{ !cancelled() }}
     runs-on: ubuntu-24.04
     # No run waits for another: with `yield-to-full-run` a contract-only run
