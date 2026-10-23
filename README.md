@@ -28,6 +28,9 @@ scripts/sync-local.*              # sync any path/URL into ~/.cursor/plugins/loc
 docs/plugin-philosophy.md
 docs/migration-playbook.md
 docs/official-docs.md
+lefthook.yml                      # git hooks every clone gets from `lefthook install`
+.githooks/guardrails/             # plugin-owned hook copies; refreshed by the guardrails installer, never edited here
+.claude/source-control.md         # subject_pattern the commit-msg hook enforces
 ```
 
 Skills are the primary surface (they appear in Agent `/`). Do not add new
