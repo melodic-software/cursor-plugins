@@ -1,4 +1,4 @@
-name: pr-require-checks
+name: PR Require Checks
 
 # This repository has no build and no package manager. CI is therefore the
 # lint/validate proxies documented in AGENTS.md, plus the sync-local regression
