@@ -275,9 +275,9 @@ jobs:
           config: _typos.toml
           hidden: true
 
-  # Single aggregate lane, in the codex-plugins shape: `ci-status` is one of the
-  # four contexts the org ci-gate ruleset requires, so every lane above has to
-  # reach the gate through this one job name.
+  # Single aggregate lane, in the codex-plugins shape: its check name `CI Status`
+  # is the context the org ci-gate ruleset requires, so every lane above has to
+  # reach the gate through this one job.
   ci-status:
     name: CI Status
     needs: [test-shell, psscriptanalyzer, validate-manifests, check-links, lychee, typos]
@@ -311,9 +311,6 @@ jobs:
         if: ${{ !cancelled() }}
         uses: melodic-software/ci-workflows/.github/actions/pr-require-checks/aggregate-results@ac4d8780de793b20e60a66890e767df579c80d83 # ac4d878 2026-11-11
         with:
-          # report-ci-status mirrors this gate under `ci-status` and runs on
-          # contract-only events too; the run-shape reads must ignore it.
-          alias-jobs: ci-status
           results: ${{ join(needs.*.result, ' ') }}
           # The replaced inline aggregator passed only `success`, so a `skipped`
           # lane was already red here.
@@ -327,18 +324,3 @@ jobs:
           rerun-contract-only-siblings: 'true'
           carry-forward-wait-seconds: '0'
           token: ${{ github.token }}
-
-  report-ci-status:
-    name: ci-status
-    needs: [ci-status]
-    if: ${{ always() }}
-    runs-on: ubuntu-24.04
-    timeout-minutes: 3
-    permissions: {}
-    steps:
-      - name: Report the conclusion of `CI Status`
-        env:
-          RESULT: ${{ needs.ci-status.result }}
-        run: |
-          echo "CI Status: $RESULT"
-          [ "$RESULT" = success ]

@@ -21,7 +21,7 @@ updates:
     # https://docs.github.com/en/code-security/dependabot/dependabot-version-updates/configuration-options-for-the-dependabot.yml-file#labels
     labels:
       - dependencies
-    # `ci-status` fails a pull request whose title is not Conventional Commits,
+    # `CI Status` fails a pull request whose title is not Conventional Commits,
     # and Dependabot's default title carries no type, so the prefix is
     # required rather than cosmetic.
     commit-message:
