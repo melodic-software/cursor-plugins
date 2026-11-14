@@ -35,19 +35,21 @@ and the `scripts/sync-local.*` sync tooling. See `README.md` and
 
   Only `bash`, `git`, `python3` and `jq` are relied on at runtime; everything in that
   table is for checking the repo, not for using it.
-- There **is** a test suite: `bash scripts/test-sync-local.sh`. See "Test" below.
+- Test suites: `bash scripts/test-sync-local.sh` and
+  `bash scripts/test-check-docs-naming.sh`. See "Test" below.
 
-### Lint / validate (there is no configured linter — use these proxies)
+### Lint / validate
 
-- Shell: prefer `shellcheck scripts/sync-local.sh .cursor/install.sh` **whenever
-  the tool is available**.
+- Shell: prefer `shellcheck scripts/*.sh .cursor/install.sh` **whenever
+  the tool is available**; it is CI's command.
   `bash -n` only *parses* — it exited clean over a path traversal, a silently swallowed
   failure, and a GNU-only `find` builtin that all had to be found and fixed by hand.
   `shellcheck` catches that class. It is packaged for Debian/Ubuntu, so if it is missing
   install it (`sudo apt-get install -y shellcheck`) when the network allows. Do **not**
   assume it is preinstalled: probe with `command -v shellcheck` first.
   Only if it can be neither found nor installed, fall back to
-  `bash -n scripts/sync-local.sh .cursor/install.sh` as the floor — a syntax check, not a lint.
+  `for f in scripts/*.sh .cursor/install.sh; do bash -n "$f"; done` as the floor — a
+  syntax check, not a lint. `bash -n` parses only its first file argument, hence the loop.
   The default rule set must stay at zero findings; a repo-root `.shellcheckrc`, if
   present, records which *optional* checks were considered and deliberately declined.
 - JSON manifests: `jq empty .cursor-plugin/marketplace.json` and
@@ -74,11 +76,13 @@ and the `scripts/sync-local.*` sync tooling. See `README.md` and
   never touches your real `~/.cursor`.
 - `pwsh` is optional: without it the PowerShell half reports as skipped and the bash half
   still runs.
-- Add a case whenever you fix a defect here. The suite already pins the ones that were
-  found the hard way: path traversal via a plugin `name` and via an entry `source`, a
-  `pluginRoot` that escapes the repo, an empty `plugins/` and `"plugins": []` (which used
-  to exit 0 printing `Synced (0)`), a nameless marketplace entry (which used to dump a
-  Python traceback), prefix-name sort order, a symlinked plugin directory (which must
+- `bash scripts/test-check-docs-naming.sh` — the regression suite for
+  `scripts/check-docs-naming.sh`.
+- Add a case whenever you fix a defect here. The sync-local suite pins: path traversal
+  via a plugin `name` and via an entry `source`, a `pluginRoot` that escapes the repo, an
+  empty `plugins/` and `"plugins": []` (exit 1, never `Synced (0)`), a nameless
+  marketplace entry (exit 1 with no Python traceback), prefix-name sort order, a
+  symlinked plugin directory (which must
   install as a **real** directory, not a link), implicit source (no path/URL), and
   local-git update (fast-forward a behind checkout, leave a dirty tree and a
   `--no-update` / `--dry-run` run behind, and update a submodule gitlink after
@@ -122,7 +126,8 @@ and the `scripts/sync-local.*` sync tooling. See `README.md` and
 
 ### CI
 
-`.github/workflows/pr-require-checks.yml` runs the checks above on every push and pull request: shell
+`.github/workflows/pr-require-checks.yml` runs the checks above on every pull request
+and every push to `main`: shell
 lint of `scripts/*.sh` **and** `.cursor/install.sh`, plus the regression suite,
 PSScriptAnalyzer, JSON and schema validation of the manifests and
 `.cursor/environment.json`, internal markdown link integrity (a relative-link
@@ -192,4 +197,4 @@ Each line names a rule CI does not enforce; the linked file states it in full.
   blockers) in the PR: [trust review](docs/migration-playbook.md#trust-review-mcp--hooks).
 - A sync-local defect fix adds a regression case to the twin suite: [test](#test).
 - A PSScriptAnalyzer suppression carries a written Justification:
-  [lint](#lint--validate-there-is-no-configured-linter--use-these-proxies).
+  [lint](#lint--validate).

@@ -96,13 +96,13 @@ it.
 
 ## Compose the prompt
 
-Skip this section on the managed-agent path. Otherwise, structure the prompt in this
-order:
+Skip this section on the managed-agent path. Otherwise the prompt covers each of these,
+in the order that reads best for the lane:
 
 1. Role and goal (one paragraph).
 2. Inputs the run can rely on: trigger payload, repository, config keys and where they are
    bound (env var name, rule name, MCP lookup).
-3. Procedure as numbered steps, each verifiable.
+3. The procedure, each step verifiable; number steps only where their order matters.
 4. Decision rules: the do-nothing conditions first, then act conditions.
 5. Guardrails from *Guardrails baked into every generated prompt* in `lanes.md`, adapted
    to the lane, never removed.

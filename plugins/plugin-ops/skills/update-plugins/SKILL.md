@@ -1,6 +1,6 @@
 ---
 name: update-plugins
-description: Update installed Cursor plugins/marketplaces for the user's plan. Fetches official docs live; covers Team Auto Refresh, /plugin marketplace update for personally-added marketplaces, and local sync-from-URL/path.
+description: Update installed Cursor plugins/marketplaces for the user's plan. Fetches official docs live; covers Team Auto Refresh, /plugin marketplace update for personally-added marketplaces, and local sync-from-URL/path. Use when installed plugins look stale, a marketplace update appears to do nothing, or someone asks how to refresh plugins.
 ---
 
 # Update Cursor plugins (plan-aware)
@@ -14,13 +14,10 @@ description: Update installed Cursor plugins/marketplaces for the user's plan. F
 `plugins/plugin-ops/reference/doc-sources.md` lists URLs. **Docs win.**
 Melodic policy: `docs/plugin-philosophy.md`.
 
-**Verified 2026-08-30.** The string `/add-plugin` does not appear in the current docs,
-but the capability was renamed, not removed: `/plugin marketplace add <git-url>`
-registers a **user-scoped** marketplace, and `/plugin marketplace update` re-indexes
-one from its repository (https://cursor.com/docs/cli/reference/slash-commands,
-https://cursor.com/docs/cli/changelog). So there *is* a documented refresh story for
-personally-added marketplaces. Read the row below as the current command, and treat
-`/add-plugin` as the old name users may still say. See `install-marketplace`.
+**Observed 2026-08-30** (https://cursor.com/docs/cli/reference/slash-commands,
+https://cursor.com/docs/cli/changelog): `/plugin marketplace add <git-url>` registers a
+**user-scoped** marketplace, and `/plugin marketplace update` re-indexes it from its
+repository. `/add-plugin` is the old name users may still say. See `install-marketplace`.
 
 ## Clarify how they installed
 

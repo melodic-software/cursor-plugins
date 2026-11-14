@@ -1,6 +1,6 @@
 ---
 name: verify-plugin
-description: Validate a Cursor plugin or marketplace checkout against live official Cursor plugin reference docs (manifests, discovery paths, frontmatter), then Melodic marketplace policy (skills-first; no new commands/).
+description: Validate a Cursor plugin or marketplace checkout against live official Cursor plugin reference docs (manifests, discovery paths, frontmatter), then Melodic marketplace policy (skills-first; no new commands/). Use when checking a plugin or marketplace before publishing or after a port, or when a manifest fails to load or validate.
 ---
 
 # Verify Cursor plugin / marketplace layout

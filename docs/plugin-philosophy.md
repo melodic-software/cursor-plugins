@@ -14,6 +14,12 @@ it. Publisher metadata may identify its source; runtime behavior must not depend
 on publisher names, organization-specific environment variables, repository
 names, absolute machine paths, or an undocumented consumer layout.
 
+Recorded exception: the `plugin-ops` `sync-local` skill and the repo-root
+`scripts/sync-local.*` it runs. When no source is passed and the open workspace is
+not a plugin or marketplace, they fall back to this marketplace's own checkout:
+`MELODIC_CURSOR_PLUGINS`, a short list of known checkout paths, then the repository
+URL. An explicit path or URL needs none of them.
+
 Keep plugins horizontally decoupled:
 
 - A plugin owns its skills, rules, agents, hooks, MCP config, scripts, and state.
