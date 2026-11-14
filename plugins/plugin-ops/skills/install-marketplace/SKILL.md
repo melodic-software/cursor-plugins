@@ -1,6 +1,6 @@
 ---
 name: install-marketplace
-description: Install a Cursor plugin marketplace or plugin for the user's plan (Ultra/personal, Teams, Enterprise). Fetches official Cursor docs live, then guides /plugin marketplace add, Team Dashboard import, or local sync.
+description: Install a Cursor plugin marketplace or plugin for the user's plan (Ultra/personal, Teams, Enterprise). Fetches official Cursor docs live, then guides /plugin marketplace add, Team Dashboard import, or local sync. Use when someone wants to add or install a plugin or marketplace, or asks which install route fits their plan.
 ---
 
 # Install a Cursor marketplace / plugin (plan-aware)
@@ -16,11 +16,9 @@ Before any recommendation, fetch and skim:
 Use `plugins/plugin-ops/reference/doc-sources.md`. **Docs win** over this skill.
 Melodic policy: `docs/plugin-philosophy.md`.
 
-**Verified 2026-08-30.** The literal string `/add-plugin` does not appear anywhere in
-the current docs. A **user-scoped marketplace added by git URL** very much does — it
-just has a different command. From
-https://cursor.com/docs/cli/reference/slash-commands and
-https://cursor.com/docs/cli/changelog:
+**Observed 2026-08-30** on https://cursor.com/docs/cli/reference/slash-commands and
+https://cursor.com/docs/cli/changelog (re-fetch both before advising), a
+**user-scoped marketplace added by git URL** is documented:
 
 - `/plugin marketplace add <git-url>` registers a marketplace; `/plugin` also browses
   and manages marketplaces **by scope** and installs at user or project scope.
@@ -29,9 +27,8 @@ https://cursor.com/docs/cli/changelog:
   the repository, and `remove` for a **user-scoped** marketplace.
 - `--plugin-dir <path>` loads a local plugin directory.
 
-So `/add-plugin` is a **renamed** command, not a removed capability. Do not tell a user
-that personal, non-team marketplaces are undocumented — route them to
-`/plugin marketplace add` instead. Re-fetch both pages before advising.
+`/add-plugin` is the old name for `/plugin marketplace add`; a user who says it
+means this route.
 
 ## Clarify
 

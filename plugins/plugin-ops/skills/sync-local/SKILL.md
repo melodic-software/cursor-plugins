@@ -31,9 +31,9 @@ Ask only if missing:
 
 ## Resolve source — do not search the disk
 
-The hang that made `/sync-local` look stuck was **not** the copy. It was
-recursive `Get-ChildItem` / glob / `rg` under `$HOME`, OneDrive, Documents, or
-AppData. Those walks take minutes on Windows and are forbidden here.
+Do not search for a checkout with recursive `Get-ChildItem` / glob / `rg` under
+`$HOME`, OneDrive, Documents, or AppData: those walks take minutes on Windows
+and make the sync look hung.
 
 Resolve source with `Test-Path` / `[ -d ]` on this list, then **stop**:
 
