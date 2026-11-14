@@ -1,0 +1,19 @@
+# JavaScript in this repository: two ES modules, scripts/validate-manifests.mjs
+# and scripts/validate-environment.mjs; no TypeScript, no tsconfig and no
+# package.json. Contract and schema:
+# https://github.com/melodic-software/claude-code-plugins/tree/main/docs/contracts/ecosystem-commands
+# CI runs these scripts in the validate-manifests job's schema step
+# (.github/workflows/pr-require-checks.yml:187-200), which is not run locally
+# (notes). CI lints and builds no JavaScript. So this record runs no command.
+enabled: true
+globs: ["*.mjs"]
+project-discovery: []
+build-cmd: null
+test-cmd: null
+check-cmd: null
+fix-cmd: null
+code-fix-cmd: null
+install-hint: "None: this record runs no command."
+tool-pin: {}
+gates: []
+notes: "Not run locally: CI's schema step (pr-require-checks.yml:187-200). It runs npm init -y and npm install ajv@8 ajv-formats in the repository root, which write package.json, package-lock.json and node_modules/ there, and curl writes marketplace.schema.json, plugin.schema.json and environment.schema.json there (:190-199), because the scripts read the schemas from the working directory (scripts/validate-manifests.mjs:13-15, scripts/validate-environment.mjs:9-10). .gitignore covers only node_modules/ of those (.gitignore:7), so a local run would leave a package.json, a package-lock.json and three schema files untracked in the tree. CI also fetches the schemas live from cursor/plugins main and cursor.com, and installs ajv@8 and ajv-formats with no exact version, so its result can change with no commit here. No opt-in key: there is no check-cmd for it to govern. Without this file the bundled typescript default (claude-code-plugins plugins/toolchain/reference/ecosystems/typescript.yaml:10, whose globs match *.mjs) would run its tsc, test and Biome commands (:12-14). The record is enabled: true with null commands rather than enabled: false: the repository holds JavaScript source, null commands read as not applicable, and false would also drop the lane for code-metrics, which reads enabled (the ecosystem-commands contract README, Consumers). The same job's jq step (:166-169) runs from cross-cutting.yaml and its skill-frontmatter step (:171-180) from markdown.yaml. Glob gap: no job in this workflow has a path filter (:15-37), so CI runs the schema step on every change; locally no record validates the manifests or .cursor/environment.json against Cursor's schemas, so a change to, for example, .cursor-plugin/marketplace.json, a plugins/*/.cursor-plugin/plugin.json or .cursor/environment.json gets only cross-cutting.yaml's jq syntax check, which does not read .cursor/environment.json."

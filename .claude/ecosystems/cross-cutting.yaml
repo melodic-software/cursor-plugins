@@ -1,0 +1,53 @@
+# Repository-wide checks in this repository. Contract and schema:
+# https://github.com/melodic-software/claude-code-plugins/tree/main/docs/contracts/ecosystem-commands
+# Lint-only: /toolchain:lint runs it, /toolchain:check does not. Each line is a
+# step of .github/workflows/pr-require-checks.yml, in its job order: the docs
+# naming check (test-shell job, :119-120), the manifest jq check
+# (validate-manifests job, :166-169), the relative-link check (check-links job,
+# :220-239), lychee (lychee job, :255-258) and typos (typos job, :272-276). The
+# last two are composites pinned at melodic-software/ci-workflows@594987a
+# (v0.39.8). Every check runs and any failure fails the command. Commands run
+# from the repository root, in bash or zsh.
+enabled: true
+globs: ["**"]
+project-discovery: []
+build-cmd: null
+test-cmd: null
+check-cmd: |
+  rc=0
+  bash scripts/check-docs-naming.sh --check || rc=1
+  jq empty .cursor-plugin/marketplace.json || rc=1
+  for f in plugins/*/.cursor-plugin/plugin.json; do jq empty "$f" || rc=1; done
+  (
+    fail=0
+    while IFS= read -r src; do
+      dir=$(dirname "$src")
+      while IFS= read -r link; do
+        case "$link" in http*|mailto:*|'') continue ;; esac
+        target=${link%%#*}
+        [ -z "$target" ] && continue
+        if [ ! -e "$dir/$target" ]; then
+          echo "::error file=$src::broken relative link -> $link"
+          fail=1
+        fi
+      done < <(sed 's/`[^`]*`//g' "$src" |
+               grep -oE '\]\([^)#][^)]*\)' |
+               sed 's/^](//; s/)$//')
+    done < <(git ls-files '*.md')
+    exit "$fail"
+  ) || rc=1
+  lychee --offline --no-progress --config lychee.toml '**/*.md' || rc=1
+  typos --config _typos.toml --hidden --exclude '.git/' . || rc=1
+  test "$rc" -eq 0
+fix-cmd: null
+code-fix-cmd: null
+opt-in: "lychee.toml and _typos.toml at the repository root for lychee and typos; the docs-naming, jq and relative-link checks always apply"
+install-hint: |
+  lychee 0.24.2: winget install lycheeverse.lychee | brew install lychee; CI verifies the x86_64-unknown-linux-gnu release archive by SHA-256 1f4e0ef7f6554a6ed33dd7ac144fb2e1bbed98598e7af973042fc5cd43951c9a
+  typos 1.50.3: winget install Crate-CI.Typos | brew install typos-cli; CI verifies the x86_64-unknown-linux-musl release archive by SHA-256 aca6b5d546307092b8d0a8e0a89dd80f9da51f2f7617c5e45c5607c1684ffbf2
+  jq: winget install jqlang.jq | brew install jq; CI uses the runner's jq and installs none (pr-require-checks.yml:166-169). The relative-link check needs bash or zsh, git, sed and grep.
+tool-pin:
+  lychee: "0.24.2"
+  typos: "1.50.3"
+gates: []
+notes: "Lint-only: owned by /toolchain:lint. Composite lines at ci-workflows@594987a: lychee-offline/action.yml:8, :11, :62 and :74, pins :19 (version) and :24 (checksum); typos/action.yml:9, :12, :98 and :116, pins :46 and :51. CI passes typos hidden: true (pr-require-checks.yml:276), so typos checks dotted paths such as .github/ and .shellcheckrc, with .git/ excluded (typos/action.yml:98). CI's typos step also emits annotations from a second json pass (typos/action.yml:105-110); that changes only the output and is left out. CI passes lychee no globs or exclude input (pr-require-checks.yml:257-258), so the defaults '**/*.md' and no --exclude-path apply (lychee-offline/action.yml:8, :16); the glob is single-quoted so lychee expands it, as in CI. Deviations: the relative-link check is CI's script with its comments dropped, its result variable named fail, not status, which zsh holds read-only, and the whole inside a subshell so its exit ends only that check; it uses process substitution, so it needs bash or zsh, not sh. CI checks each manifest with a separate jq call (:166-169); check-cmd keeps that, because one jq call over several files reads them as one stream, so two truncated files could pass together. CI stops each job at its first failing step; check-cmd runs every check. Every check reads the whole tree, not <files>: CI runs each on every change, since no job in this workflow has a path filter (:15-37), and the link checks span files, so a renamed file or heading breaks links in files the change does not touch. A local run reads the working tree, where it can raise findings CI's clean checkout does not: typos walks the tree honoring ignore files (_typos.toml:6), so an untracked file no ignore file covers is spell-checked, for example one under .work/, which .gitignore does not list (.gitignore:1-13); lychee.toml sets hidden = true and a glob input does not honor .gitignore, so ignored dot-directories other than the excluded .work/ and .claude/worktrees/ are read (lychee.toml:11-16, :47-58); the frontmatter glob in markdown.yaml expands on disk. The relative-link check and check-docs-naming.sh list files with git ls-files (pr-require-checks.yml:238; scripts/check-docs-naming.sh:40), so a new file is checked only once it is staged, and a link to an untracked file resolves locally but not in CI. No gitleaks, editorconfig-checker or markdownlint command: .gitleaks.toml, .editorconfig, .editorconfig-checker.json and .markdownlint-cli2.jsonc are standards-synced files that CI deliberately does not re-lint (pr-require-checks.yml:7-13; pr-check-managed-files-hosted.yml:41-42, :67, :72), and no CI job here runs those tools; lefthook.yml:1-6 pulls git hooks from claude-code-plugins, and these records follow CI, not a local hook. Not run locally: the schema step of the validate-manifests job (pr-require-checks.yml:187-200); typescript.yaml gives the reason. Checks with no local form: the pull-request contract check (pr-require-checks.yml:303-306, check-contract@594987a v0.39.8) and the result aggregation (:307-326, aggregate-results@ac4d878) in the ci-status job (:281-283); they need the pull request. This ci-status job has no draft refusal. Not run locally: the model review lanes pr-review (.github/workflows/pr-review-hosted.yml:74-85) and pr-review-security (.github/workflows/pr-review-security-hosted.yml:67-78), which review the pull request through ci-workflows reusables called at @main, not pinned; both are advisory and skip drafts (pr-review-hosted.yml:37, :76-78; pr-review-security-hosted.yml:44-46, :69-71). Not run locally: check-managed-files (pr-check-managed-files-hosted.yml:106-127, check-managed-files@8e1076f v0.71.0), which needs a melodic-software/standards checkout and the pull request; it is advisory and not aggregated into ci-status (:20-22). pr-automerge-dependabot (.github/workflows/pr-automerge-dependabot.yml:21-28) checks nothing; it arms auto-merge on a Dependabot pull request (:3-7)."
