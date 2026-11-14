@@ -90,7 +90,7 @@ concurrency:
 
 jobs:
   test-shell:
-    name: Shell (shellcheck + regression suite)
+    name: Test Shell
     # The contract-only predicate, verbatim (see the `on.pull_request` comment).
     if: ${{ !(github.event.pull_request.head.repo.full_name == github.repository && (contains(fromJSON('["labeled","unlabeled"]'), github.event.action) || (github.event.action == 'edited' && !github.event.changes.base))) }}
     runs-on: ubuntu-latest
@@ -105,7 +105,7 @@ jobs:
       - name: shellcheck (must be zero findings)
         run: shellcheck scripts/*.sh .cursor/install.sh
 
-      - name: bash -n (syntax floor)
+      - name: Run bash -n (syntax floor)
         run: for f in scripts/*.sh .cursor/install.sh; do bash -n "$f"; done
 
       # pwsh is preinstalled on ubuntu-latest, so the suite exercises BOTH twins
@@ -116,7 +116,7 @@ jobs:
       - name: docs-naming regression suite
         run: bash scripts/test-check-docs-naming.sh
 
-      - name: docs/ filenames are lower-kebab-case
+      - name: Check that docs/ filenames are lower-kebab-case
         run: bash scripts/check-docs-naming.sh --check
 
   psscriptanalyzer:
@@ -154,7 +154,7 @@ jobs:
           Write-Host "PSScriptAnalyzer: 0 findings."
 
   validate-manifests:
-    name: Manifests (JSON + official Cursor schemas)
+    name: Validate Manifests
     # The contract-only predicate, verbatim (see the `on.pull_request` comment).
     if: ${{ !(github.event.pull_request.head.repo.full_name == github.repository && (contains(fromJSON('["labeled","unlabeled"]'), github.event.action) || (github.event.action == 'edited' && !github.event.changes.base))) }}
     runs-on: ubuntu-latest
@@ -163,7 +163,7 @@ jobs:
       # org requires it; a tag or short SHA is rejected at "Set up job".
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
 
-      - name: jq — manifests are well-formed JSON
+      - name: Check that manifests are well-formed JSON with jq
         run: |
           jq empty .cursor-plugin/marketplace.json
           for f in plugins/*/.cursor-plugin/plugin.json; do jq empty "$f"; done
@@ -200,7 +200,7 @@ jobs:
           node scripts/validate-environment.mjs
 
   check-links:
-    name: Docs (internal link integrity)
+    name: Check Links
     # The contract-only predicate, verbatim (see the `on.pull_request` comment).
     if: ${{ !(github.event.pull_request.head.repo.full_name == github.repository && (contains(fromJSON('["labeled","unlabeled"]'), github.event.action) || (github.event.action == 'edited' && !github.event.changes.base))) }}
     runs-on: ubuntu-latest
@@ -242,7 +242,7 @@ jobs:
   # The job above stays: lychee's `**/*.md` glob skips dot-directories, which
   # `git ls-files` covers.
   lychee:
-    name: Offline links
+    name: Lychee
     # The contract-only predicate, verbatim (see the `on.pull_request` comment).
     if: ${{ !(github.event.pull_request.head.repo.full_name == github.repository && (contains(fromJSON('["labeled","unlabeled"]'), github.event.action) || (github.event.action == 'edited' && !github.event.changes.base))) }}
     runs-on: ubuntu-24.04
@@ -258,7 +258,7 @@ jobs:
           config: lychee.toml
 
   typos:
-    name: Spelling (typos, en-us)
+    name: Typos
     # The contract-only predicate, verbatim (see the `on.pull_request` comment).
     if: ${{ !(github.event.pull_request.head.repo.full_name == github.repository && (contains(fromJSON('["labeled","unlabeled"]'), github.event.action) || (github.event.action == 'edited' && !github.event.changes.base))) }}
     runs-on: ubuntu-latest
