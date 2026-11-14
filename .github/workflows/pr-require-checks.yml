@@ -2,7 +2,7 @@ name: PR Require Checks
 
 # This repository has no build and no package manager. CI is therefore the
 # lint/validate proxies documented in AGENTS.md, plus the sync-local regression
-# suite, run on every push and pull request.
+# suite, run on every pull request and every push to `main`.
 #
 # Scope note: the repo-root config files synced from melodic-software/standards
 # (.editorconfig, .gitattributes, _typos.toml, lychee.toml, .gitleaks.toml,
