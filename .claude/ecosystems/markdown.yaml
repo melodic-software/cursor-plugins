@@ -1,0 +1,28 @@
+# Markdown in this repository: READMEs, docs, plugin references and skill
+# bodies. Contract and schema:
+# https://github.com/melodic-software/claude-code-plugins/tree/main/docs/contracts/ecosystem-commands
+# The check is CI's skill-frontmatter step in the validate-manifests job
+# (.github/workflows/pr-require-checks.yml:171-180). CI runs no markdown
+# linter; its link checks run from cross-cutting.yaml. Commands run from the
+# repository root.
+enabled: true
+globs: ["*.md"]
+project-discovery: []
+build-cmd: null
+test-cmd: null
+check-cmd: |
+  status=0
+  for f in plugins/*/skills/*/SKILL.md; do
+    if [ "$(head -1 "$f")" != "---" ]; then
+      echo "::error file=$f::SKILL.md must start with a --- YAML frontmatter block"
+      status=1
+    fi
+  done
+  test "$status" -eq 0
+fix-cmd: null
+code-fix-cmd: null
+opt-in: "always applies to plugins/*/skills/*/SKILL.md; the check needs no config"
+install-hint: "None: the command uses only the shell and head."
+tool-pin: {}
+gates: []
+notes: "check-cmd is CI's step verbatim except its last line, test in place of exit, so the command does not end the shell that runs it. It checks every plugins/*/skills/*/SKILL.md, not <files>, as CI does on every change. The glob expands on disk, so a local run also checks an untracked SKILL.md, which CI's clean checkout does not have. No markdownlint: without this file the bundled markdown default (claude-code-plugins plugins/toolchain/reference/ecosystems/markdown.yaml:7) would run markdownlint-cli2 on changed *.md files, because its opt-in, a markdownlint config (:9), is met by .markdownlint-cli2.jsonc; that file is standards-synced (.github/workflows/pr-check-managed-files-hosted.yml:72) and CI deliberately does not lint with it (pr-require-checks.yml:7-13). fix-cmd is null: CI has no markdown fix step. No job in this workflow has a path filter (:15-37), so CI runs this step on every change; the step reads only SKILL.md files, which these globs select."

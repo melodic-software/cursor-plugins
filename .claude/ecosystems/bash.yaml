@@ -1,0 +1,24 @@
+# Shell in this repository: scripts/*.sh, .cursor/install.sh and the
+# standards-synced .claude/cloud-bootstrap.sh. Contract and schema:
+# https://github.com/melodic-software/claude-code-plugins/tree/main/docs/contracts/ecosystem-commands
+# Lint and tests are CI's test-shell job (.github/workflows/pr-require-checks.yml:92-120):
+# shellcheck and bash -n over scripts/*.sh and .cursor/install.sh (:105-109),
+# then the sync-local and docs-naming regression suites (:113-117). Commands
+# run from the repository root.
+enabled: true
+globs: ["*.sh", "*.bash"]
+project-discovery: []
+build-cmd: null
+test-cmd: "bash scripts/test-sync-local.sh && bash scripts/test-check-docs-naming.sh"
+check-cmd: |
+  rc=0
+  shellcheck scripts/*.sh .cursor/install.sh || rc=1
+  for f in scripts/*.sh .cursor/install.sh; do bash -n "$f" || rc=1; done
+  test "$rc" -eq 0
+fix-cmd: null
+code-fix-cmd: null
+opt-in: "shellcheck and bash -n always apply to CI's shell file list"
+install-hint: "shellcheck with no version pin: CI runs sudo apt-get install -y shellcheck on ubuntu-latest (pr-require-checks.yml:96, :102-103) and verifies no checksum. winget install ShellCheck.ShellCheck | brew install shellcheck. The sync-local suite also needs git and python3 (AGENTS.md:36, :93-96), and pwsh for its PowerShell half."
+tool-pin: {}
+gates: []
+notes: "No tool-pin: CI installs Ubuntu's shellcheck package, so its version follows the runner image (pr-require-checks.yml:102-103). check-cmd lints CI's file list, not <files>: CI runs shellcheck and bash -n over scripts/*.sh and .cursor/install.sh on every change (:105-109) and leaves out .claude/cloud-bootstrap.sh, a standards-synced file (.github/workflows/pr-check-managed-files-hosted.yml:39), which <files> would lint. No --rcfile: shellcheck reads the root .shellcheckrc by itself, as in CI. AGENTS.md's shell line names only scripts/sync-local.sh and .cursor/install.sh (AGENTS.md:42-43); this record follows CI. CI stops at its first failing step; check-cmd runs shellcheck and bash -n over every listed file and fails when any fails. The two test steps run in order with no continue-on-error (:113-117), so CI stops at the first failure and test-cmd chains them with &&. test-sync-local.sh exits 0 when pwsh is missing: the PowerShell half reports as skipped and the bash half still runs (scripts/test-sync-local.sh:10-12, :99-100, :498-504); read its skipped count. Both suites build their fixtures under TMPDIR (scripts/test-sync-local.sh:38, scripts/test-check-docs-naming.sh:10). scripts/check-docs-naming.sh --check, the last step of the same job (:119-120), runs from cross-cutting.yaml, so a docs/ change triggers it. Glob gaps: no job in this workflow has a path filter (:15-37), so CI runs these steps on every change; these globs select only *.sh and *.bash, so a change to another file the suites read runs no local test, for example scripts/sync-local.ps1, the twin the sync-local suite runs (scripts/test-sync-local.sh:28), or .cursor-plugin/marketplace.json and the plugins/ tree, which its repo-dry-run case syncs from (:198)."

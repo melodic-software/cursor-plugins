@@ -1,0 +1,22 @@
+# PowerShell in this repository: scripts/sync-local.ps1, the twin of
+# scripts/sync-local.sh. Contract and schema:
+# https://github.com/melodic-software/claude-code-plugins/tree/main/docs/contracts/ecosystem-commands
+# Lint is CI's psscriptanalyzer job (.github/workflows/pr-require-checks.yml:122-154):
+# Invoke-ScriptAnalyzer on scripts/sync-local.ps1 with no settings file,
+# failing on any finding (:149-153). CI runs no PowerShell test of its own;
+# the sync-local suite in bash.yaml's test-cmd runs this script. Commands run
+# from the repository root.
+enabled: true
+globs: ["*.ps1", "*.psm1"]
+project-discovery: []
+build-cmd: null
+test-cmd: null
+check-cmd: |
+  pwsh -NoProfile -Command '$ErrorActionPreference = "Stop"; $findings = Invoke-ScriptAnalyzer -Path ./scripts/sync-local.ps1; if ($findings) { $findings | Format-Table Severity, RuleName, Line, Message -AutoSize -Wrap | Out-String | Write-Host; throw "PSScriptAnalyzer reported $($findings.Count) finding(s)." }; Write-Host "PSScriptAnalyzer: 0 findings."'
+fix-cmd: null
+code-fix-cmd: null
+opt-in: "PSScriptAnalyzer always applies to scripts/sync-local.ps1; CI uses no settings file"
+install-hint: "pwsh, then Install-Module PSScriptAnalyzer -Scope CurrentUser -Force, as CI runs it from PSGallery with no version pin (pr-require-checks.yml:132-136); CI verifies no checksum."
+tool-pin: {}
+gates: []
+notes: "No tool-pin: CI installs the current PSGallery release of PSScriptAnalyzer (pr-require-checks.yml:136). check-cmd is CI's analyzer call (:149-154) with two deviations. It sets $ErrorActionPreference to Stop: without it a missing PSScriptAnalyzer module leaves $findings empty and pwsh exits 0 after printing 0 findings, while CI always has the module from the step before (:132-136). The -SuppressedOnly listing (:144-148) only prints the deliberate suppressions and does not change the result, so it is left out. check-cmd analyzes CI's one path, not <files>, as CI does on every change; the repository holds no other PowerShell file. fix-cmd is null: CI has no format step. Glob gap: no job in this workflow has a path filter (:15-37), so CI runs the sync-local suite on every change; that suite runs this script beside its bash twin (scripts/test-sync-local.sh:4-6, :28) and is bash.yaml's test-cmd, so a change to only scripts/sync-local.ps1 runs no local test."
