@@ -16,7 +16,7 @@ updates:
   - package-ecosystem: github-actions
     directory: /
     schedule:
-      interval: weekly
+      interval: daily
     # An explicit labels: list replaces (not adds to) Dependabot's automatic
     # labels. Only `dependencies` is listed: the ecosystem default
     # `github_actions` is not in this org's github-iac label roster, and
