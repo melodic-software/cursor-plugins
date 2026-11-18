@@ -13,11 +13,11 @@
 set -euo pipefail
 
 case "${1:-}" in
-'' | --check) ;;
-*)
-  printf 'usage: %s [--check]\n' "${0##*/}" >&2
-  exit 2
-  ;;
+  '' | --check) ;;
+  *)
+    printf 'usage: %s [--check]\n' "${0##*/}" >&2
+    exit 2
+    ;;
 esac
 
 src_dir="${BASH_SOURCE[0]%/*}"

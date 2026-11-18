@@ -40,14 +40,20 @@ trap 'rm -rf "$work"' EXIT
 
 # --- assertions ---------------------------------------------------------------
 
-ok() { pass=$((pass + 1)); printf '  ok   %s\n' "$1"; }
+ok() {
+  pass=$((pass + 1))
+  printf '  ok   %s\n' "$1"
+}
 
 not_ok() {
   fail=$((fail + 1))
   failed_names+=("$1")
   printf '  FAIL %s\n' "$1"
   shift
-  while [[ $# -gt 0 ]]; do printf '         %s\n' "$1"; shift; done
+  while [[ $# -gt 0 ]]; do
+    printf '         %s\n' "$1"
+    shift
+  done
 }
 
 # run_sh / run_ps write stdout to $out_file and return the exit code. HOME is
@@ -79,17 +85,24 @@ assert_twins() {
   shift 2
   local sh_args=() ps_args=() seen=0
   while [[ $# -gt 0 ]]; do
-    if [[ "$1" == "--" ]]; then seen=1; shift; continue; fi
+    if [[ "$1" == "--" ]]; then
+      seen=1
+      shift
+      continue
+    fi
     if [[ "$seen" -eq 0 ]]; then sh_args+=("$1"); else ps_args+=("$1"); fi
     shift
   done
 
   local h1 h2 o1 o2 rc1 rc2
-  h1="$work/h.$name.sh"; h2="$work/h.$name.ps"
-  o1="$work/o.$name.sh"; o2="$work/o.$name.ps"
+  h1="$work/h.$name.sh"
+  h2="$work/h.$name.ps"
+  o1="$work/o.$name.sh"
+  o2="$work/o.$name.ps"
   mkdir -p "$h1" "$h2"
 
-  rc1=0; run_sh "$h1" "$o1" "${sh_args[@]}" || rc1=$?
+  rc1=0
+  run_sh "$h1" "$o1" "${sh_args[@]}" || rc1=$?
   if [[ "$rc1" -ne "$want" ]]; then
     not_ok "$name (sh exit)" "expected $want, got $rc1" "$(head -3 "$o1" "$o1.err" 2>/dev/null)"
   else
@@ -97,11 +110,13 @@ assert_twins() {
   fi
 
   if [[ "$have_pwsh" -eq 0 ]]; then
-    skip=$((skip + 1)); printf '  skip %s (pwsh not installed)\n' "$name"
+    skip=$((skip + 1))
+    printf '  skip %s (pwsh not installed)\n' "$name"
     return 0
   fi
 
-  rc2=0; run_ps "$h2" "$o2" "${ps_args[@]}" || rc2=$?
+  rc2=0
+  run_ps "$h2" "$o2" "${ps_args[@]}" || rc2=$?
   if [[ "$rc2" -ne "$want" ]]; then
     not_ok "$name (ps1 exit)" "expected $want, got $rc2" "$(head -3 "$o2" "$o2.err" 2>/dev/null)"
   else
@@ -149,10 +164,12 @@ mkplugin "$f_ok/plugins/alpha" alpha
 mkplugin "$f_ok/plugins/beta" beta
 
 # 2. empty plugins/ directory, no marketplace.json
-f_empty="$work/f_empty"; mkdir -p "$f_empty/plugins"
+f_empty="$work/f_empty"
+mkdir -p "$f_empty/plugins"
 
 # 3. marketplace declaring no plugins at all
-f_noplugins="$work/f_noplugins"; mkmarket "$f_noplugins" ''
+f_noplugins="$work/f_noplugins"
+mkmarket "$f_noplugins" ''
 
 # 4. a plugin name that tries to escape the destination root
 f_badname="$work/f_badname"
@@ -165,10 +182,12 @@ mkmarket "$f_badsrc" '{"name":"escapee","source":"../../../etc"},{"name":"alpha"
 mkplugin "$f_badsrc/plugins/alpha" alpha
 
 # 6. a pluginRoot that escapes the source repo
-f_badroot="$work/f_badroot"; mkmarket "$f_badroot" '{"name":"a","source":"a"}' '../../..'
+f_badroot="$work/f_badroot"
+mkmarket "$f_badroot" '{"name":"a","source":"a"}' '../../..'
 
 # 7. a marketplace entry with no name key at all
-f_noname="$work/f_noname"; mkmarket "$f_noname" '{"source":"alpha"}'
+f_noname="$work/f_noname"
+mkmarket "$f_noname" '{"source":"alpha"}'
 mkplugin "$f_noname/plugins/alpha" alpha
 
 # 8. plugins/ fallback layout containing a SYMLINK to a plugin outside plugins/
@@ -182,7 +201,8 @@ f_sort="$work/f_sort"
 for n in ai ai-briefing docs docs-hygiene; do mkplugin "$f_sort/plugins/$n" "$n"; done
 
 # 10. a single-plugin repo
-f_single="$work/f_single"; mkplugin "$f_single" solo
+f_single="$work/f_single"
+mkplugin "$f_single" solo
 
 # --- cases --------------------------------------------------------------------
 
@@ -217,33 +237,41 @@ assert_twins prefix-sort-order 0 --dry-run "$f_sort" -- -Source "$f_sort" -DryRu
 # --- content assertions -------------------------------------------------------
 
 printf 'output content\n'
-h="$work/h.content"; mkdir -p "$h"
+h="$work/h.content"
+mkdir -p "$h"
 
-o="$work/c.badname"; run_sh "$h" "$o" --dry-run "$f_badname" || true
+o="$work/c.badname"
+run_sh "$h" "$o" --dry-run "$f_badname" || true
 assert_contains "escaping name is skipped, not synced" "$o" '(invalid plugin name)'
-assert_absent   "escaping name never reaches the sync list" "$o" 'Would sync (2)'
+assert_absent "escaping name never reaches the sync list" "$o" 'Would sync (2)'
 
-o="$work/c.badsrc"; run_sh "$h" "$o" --dry-run "$f_badsrc" || true
+o="$work/c.badsrc"
+run_sh "$h" "$o" --dry-run "$f_badsrc" || true
 assert_contains "escaping source is skipped" "$o" '(source escapes plugin root)'
 assert_contains "the sibling plugin still syncs" "$o" 'alpha'
 
-o="$work/c.noname"; run_sh "$h" "$o" --dry-run "$f_noname" || true
+o="$work/c.noname"
+run_sh "$h" "$o" --dry-run "$f_noname" || true
 assert_absent "a nameless entry does not raise a Python traceback" "$o.err" 'Traceback'
 assert_absent "a nameless entry does not raise KeyError" "$o.err" 'KeyError'
 
-o="$work/c.sort"; run_sh "$h" "$o" --dry-run "$f_sort" || true
+o="$work/c.sort"
+run_sh "$h" "$o" --dry-run "$f_sort" || true
 assert_contains "prefix names keep basename sort order" "$o" 'ai, ai-briefing, docs, docs-hygiene'
 
-o="$work/c.dry"; run_sh "$h" "$o" --dry-run "$f_ok" || true
+o="$work/c.dry"
+run_sh "$h" "$o" --dry-run "$f_ok" || true
 assert_contains "a dry run says it would sync" "$o" 'Would sync'
-assert_absent   "a dry run never claims it synced" "$o" 'Synced ('
+assert_absent "a dry run never claims it synced" "$o" 'Synced ('
 
-o="$work/c.missing"; run_sh "$h" "$o" --dry-run "$work/does-not-exist" || true
+o="$work/c.missing"
+run_sh "$h" "$o" --dry-run "$work/does-not-exist" || true
 assert_contains "missing source still names the path" "$o.err" 'Source path not found:'
 assert_contains "missing source hints at the marketplace URL" "$o.err" 'https://github.com/melodic-software/cursor-plugins'
 
 # --ref with no value is bash-only: pwsh's parameter binder owns that path.
-rc=0; run_sh "$h" "$work/c.ref" --dry-run "$f_ok" --ref || rc=$?
+rc=0
+run_sh "$h" "$work/c.ref" --dry-run "$f_ok" --ref || rc=$?
 if [[ "$rc" -eq 2 ]]; then ok "--ref with no value exits 2"; else
   not_ok "--ref with no value" "expected exit 2, got $rc"
 fi
@@ -298,10 +326,13 @@ clone_from_old() {
 # Fast-forward + copy the new marker
 clone_from_old "$work/behind.sh"
 clone_from_old "$work/behind.ps"
-h1="$work/h.git-ff.sh"; h2="$work/h.git-ff.ps"
+h1="$work/h.git-ff.sh"
+h2="$work/h.git-ff.ps"
 mkdir -p "$h1" "$h2"
-o1="$work/o.git-ff.sh"; o2="$work/o.git-ff.ps"
-rc1=0; run_sh "$h1" "$o1" "$work/behind.sh" || rc1=$?
+o1="$work/o.git-ff.sh"
+o2="$work/o.git-ff.ps"
+rc1=0
+run_sh "$h1" "$o1" "$work/behind.sh" || rc1=$?
 if [[ "$rc1" -eq 0 ]]; then ok "git-ff (sh exit 0)"; else
   not_ok "git-ff (sh exit)" "expected 0, got $rc1" "$(head -5 "$o1" "$o1.err" 2>/dev/null)"
 fi
@@ -316,19 +347,21 @@ else
   not_ok "git-ff (sh copied updated marker)" "marker=$(cat "$h1/.cursor/plugins/local/solo/MARKER" 2>/dev/null)"
 fi
 if [[ "$have_pwsh" -eq 1 ]]; then
-  rc2=0; run_ps "$h2" "$o2" -Source "$work/behind.ps" || rc2=$?
+  rc2=0
+  run_ps "$h2" "$o2" -Source "$work/behind.ps" || rc2=$?
   if [[ "$rc2" -eq 0 ]]; then ok "git-ff (ps1 exit 0)"; else
     not_ok "git-ff (ps1 exit)" "expected 0, got $rc2" "$(head -5 "$o2" "$o2.err" 2>/dev/null)"
   fi
   if diff <(sed -e "s|$h1|<HOME>|g" -e "s|$work/behind.sh|<SRC>|g" "$o1") \
-          <(sed -e "s|$h2|<HOME>|g" -e "s|$work/behind.ps|<SRC>|g" "$o2") \
-          >"$work/d.git-ff" 2>&1; then
+    <(sed -e "s|$h2|<HOME>|g" -e "s|$work/behind.ps|<SRC>|g" "$o2") \
+    >"$work/d.git-ff" 2>&1; then
     ok "git-ff (twins byte-identical after path normalize)"
   else
     not_ok "git-ff (twin parity)" "$(head -8 "$work/d.git-ff")"
   fi
 else
-  skip=$((skip + 1)); printf '  skip %s (pwsh not installed)\n' "git-ff"
+  skip=$((skip + 1))
+  printf '  skip %s (pwsh not installed)\n' "git-ff"
 fi
 
 # Fast-forward a marketplace whose plugin lives in a submodule. The
@@ -378,10 +411,13 @@ clone_super_from_old() {
 
 clone_super_from_old "$work/behind-sub.sh"
 clone_super_from_old "$work/behind-sub.ps"
-h1="$work/h.git-ff-sub.sh"; h2="$work/h.git-ff-sub.ps"
+h1="$work/h.git-ff-sub.sh"
+h2="$work/h.git-ff-sub.ps"
 mkdir -p "$h1" "$h2"
-o1="$work/o.git-ff-sub.sh"; o2="$work/o.git-ff-sub.ps"
-rc1=0; run_sh "$h1" "$o1" "$work/behind-sub.sh" || rc1=$?
+o1="$work/o.git-ff-sub.sh"
+o2="$work/o.git-ff-sub.ps"
+rc1=0
+run_sh "$h1" "$o1" "$work/behind-sub.sh" || rc1=$?
 if [[ "$rc1" -eq 0 ]]; then ok "git-ff-submodule (sh exit 0)"; else
   not_ok "git-ff-submodule (sh exit)" "expected 0, got $rc1" "$(head -5 "$o1" "$o1.err" 2>/dev/null)"
 fi
@@ -403,7 +439,8 @@ else
     "status=$(git -C "$work/behind-sub.sh" status --porcelain)"
 fi
 if [[ "$have_pwsh" -eq 1 ]]; then
-  rc2=0; run_ps "$h2" "$o2" -Source "$work/behind-sub.ps" || rc2=$?
+  rc2=0
+  run_ps "$h2" "$o2" -Source "$work/behind-sub.ps" || rc2=$?
   if [[ "$rc2" -eq 0 ]]; then ok "git-ff-submodule (ps1 exit 0)"; else
     not_ok "git-ff-submodule (ps1 exit)" "expected 0, got $rc2" "$(head -5 "$o2" "$o2.err" 2>/dev/null)"
   fi
@@ -414,14 +451,15 @@ if [[ "$have_pwsh" -eq 1 ]]; then
       "marker=$(cat "$h2/.cursor/plugins/local/solo/MARKER" 2>/dev/null)"
   fi
   if diff <(sed -e "s|$h1|<HOME>|g" -e "s|$work/behind-sub.sh|<SRC>|g" "$o1") \
-          <(sed -e "s|$h2|<HOME>|g" -e "s|$work/behind-sub.ps|<SRC>|g" "$o2") \
-          >"$work/d.git-ff-sub" 2>&1; then
+    <(sed -e "s|$h2|<HOME>|g" -e "s|$work/behind-sub.ps|<SRC>|g" "$o2") \
+    >"$work/d.git-ff-sub" 2>&1; then
     ok "git-ff-submodule (twins byte-identical after path normalize)"
   else
     not_ok "git-ff-submodule (twin parity)" "$(head -8 "$work/d.git-ff-sub")"
   fi
 else
-  skip=$((skip + 1)); printf '  skip %s (pwsh not installed)\n' "git-ff-submodule"
+  skip=$((skip + 1))
+  printf '  skip %s (pwsh not installed)\n' "git-ff-submodule"
 fi
 
 # Dirty checkout: do not pull, copy the old marker
@@ -429,7 +467,8 @@ clone_from_old "$work/dirty.sh"
 clone_from_old "$work/dirty.ps"
 printf 'wip\n' >"$work/dirty.sh/WIP"
 printf 'wip\n' >"$work/dirty.ps/WIP"
-h="$work/h.git-dirty"; mkdir -p "$h"
+h="$work/h.git-dirty"
+mkdir -p "$h"
 o="$work/o.git-dirty"
 run_sh "$h" "$o" "$work/dirty.sh" || true
 assert_contains "dirty checkout announces itself" "$o" "without pulling"
@@ -441,7 +480,8 @@ fi
 
 # --no-update: stay behind
 clone_from_old "$work/noup.sh"
-h="$work/h.git-noup"; mkdir -p "$h"
+h="$work/h.git-noup"
+mkdir -p "$h"
 o="$work/o.git-noup"
 run_sh "$h" "$o" --no-update "$work/noup.sh" || true
 assert_absent " --no-update does not fast-forward" "$o" "Fast-forwarded"
@@ -454,7 +494,8 @@ fi
 # Dry-run of a behind checkout must not mutate it
 clone_from_old "$work/drybehind"
 old_head="$(git -C "$work/drybehind" rev-parse HEAD)"
-h="$work/h.git-dry"; mkdir -p "$h"
+h="$work/h.git-dry"
+mkdir -p "$h"
 run_sh "$h" "$work/o.git-dry" --dry-run "$work/drybehind" || true
 new_head="$(git -C "$work/drybehind" rev-parse HEAD)"
 if [[ "$old_head" == "$new_head" ]]; then
@@ -468,7 +509,8 @@ assert_absent "dry-run of a git source does not claim up to date" "$work/o.git-d
 # --- real (non-dry) sync: the destination must be a real directory ------------
 
 printf 'real sync\n'
-h="$work/h.real"; mkdir -p "$h"
+h="$work/h.real"
+mkdir -p "$h"
 run_sh "$h" "$work/r.link" "$f_link" || true
 linked="$h/.cursor/plugins/local/linked"
 if [[ -L "$linked" ]]; then
@@ -480,7 +522,8 @@ else
 fi
 
 if [[ "$have_pwsh" -eq 1 ]]; then
-  h="$work/h.real.ps"; mkdir -p "$h"
+  h="$work/h.real.ps"
+  mkdir -p "$h"
   run_ps "$h" "$work/r.link.ps" -Source "$f_link" || true
   linked="$h/.cursor/plugins/local/linked"
   if [[ -L "$linked" ]]; then
