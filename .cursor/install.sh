@@ -77,8 +77,8 @@ if command -v pwsh >/dev/null 2>&1; then
     log "PSScriptAnalyzer present"
   else
     log "Installing PSScriptAnalyzer"
-    pwsh -NoProfile -c 'Set-PSRepository PSGallery -InstallationPolicy Trusted; Install-Module PSScriptAnalyzer -Scope CurrentUser -Force' \
-      || log "PSScriptAnalyzer install failed; continuing"
+    pwsh -NoProfile -c 'Set-PSRepository PSGallery -InstallationPolicy Trusted; Install-Module PSScriptAnalyzer -Scope CurrentUser -Force' ||
+      log "PSScriptAnalyzer install failed; continuing"
   fi
 fi
 

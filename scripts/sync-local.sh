@@ -26,9 +26,18 @@ plugins=()
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
-    --dry-run) dry_run=1; shift ;;
-    --keep-clone) keep_clone=1; shift ;;
-    --no-update) no_update=1; shift ;;
+    --dry-run)
+      dry_run=1
+      shift
+      ;;
+    --keep-clone)
+      keep_clone=1
+      shift
+      ;;
+    --no-update)
+      no_update=1
+      shift
+      ;;
     --ref)
       if [[ $# -lt 2 ]]; then
         echo "Missing value for --ref" >&2
@@ -293,7 +302,8 @@ if [[ -f "$marketplace" ]]; then
   # Command substitution (not a process-substitution redirect) so a
   # python3 failure still trips `set -e`, matching the previous
   # per-invocation assignments.
-  parsed="$(python3 - "$marketplace" "${plugins[@]}" <<'PY'
+  parsed="$(
+    python3 - "$marketplace" "${plugins[@]}" <<'PY'
 import json, sys
 m = json.load(open(sys.argv[1]))
 print((m.get("metadata") or {}).get("pluginRoot") or "")
@@ -318,7 +328,7 @@ for name in sel:
         rel = s if isinstance(s, str) else s.get("path", name)
     print("%s\t%s" % (name, rel))
 PY
-)"
+  )"
   {
     IFS= read -r pr || true
     if [[ -n "$pr" ]]; then
@@ -347,7 +357,7 @@ PY
       names+=("$name")
       paths+=("$src_resolved")
     done
-  } <<< "$parsed"
+  } <<<"$parsed"
 elif [[ -f "$root_plugin" ]]; then
   # Two stacked fallbacks, kept because they cover different failure modes:
   # python3 missing or plugin.json unparsable (non-zero exit), and python3 fine
