@@ -1,0 +1,5 @@
+# Formatter-only commits, skipped by GitHub's blame view and by local `git blame` once a clone runs
+# `git config blame.ignoreRevsFile .git-blame-ignore-revs`.
+
+# bash-format (shfmt) cleanup
+410d843031a9622605cb0a8ac0545ca6e1380e44
