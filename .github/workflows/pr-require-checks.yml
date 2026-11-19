@@ -251,7 +251,7 @@ jobs:
         with:
           persist-credentials: false
       - name: Check local links and anchors
-        uses: melodic-software/ci-workflows/.github/actions/lychee-offline@24067add42f5fa04743c587c6a22aa7d4059e7b8 # v0.75.0
+        uses: melodic-software/ci-workflows/.github/actions/lychee-offline@9c5bedfbfdbdfe733b9ce4cd7ca80c1574bd4cb8 # v0.76.3
         with:
           config: lychee.toml
 
@@ -268,7 +268,7 @@ jobs:
       # `hidden` exists starting at v0.26.0. The v0.24.0 action has no such input,
       # and without it typos skips `.github/` and `.shellcheckrc`.
       - name: typos (en-us, hidden files included)
-        uses: melodic-software/ci-workflows/.github/actions/typos@24067add42f5fa04743c587c6a22aa7d4059e7b8 # v0.75.0
+        uses: melodic-software/ci-workflows/.github/actions/typos@9c5bedfbfdbdfe733b9ce4cd7ca80c1574bd4cb8 # v0.76.3
         with:
           config: _typos.toml
           hidden: true
@@ -312,7 +312,7 @@ jobs:
       # stays at its default `fail`, as before: a skipped lane is red.
       - name: Aggregate lane results
         id: report
-        uses: melodic-software/ci-workflows/.github/actions/pr-require-checks/report-ci-status@ebd0e3bed99ae1365fcb4ef47ce97cfa745fcf2f # v0.76.0
+        uses: melodic-software/ci-workflows/.github/actions/pr-require-checks/report-ci-status@9c5bedfbfdbdfe733b9ce4cd7ca80c1574bd4cb8 # v0.76.3
         with:
           step-name: Aggregate lane results
           results: ${{ join(needs.*.result, ' ') }}
