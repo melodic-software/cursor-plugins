@@ -11,7 +11,6 @@ work="$(mktemp -d "${TMPDIR:-/tmp}/docs-naming-tests.XXXXXX")"
 trap 'rm -rf "$work"' EXIT
 fail=0
 
-# run_case NAME WANT_EXIT FILE...  (files are created under docs/ and staged)
 run_case() {
   local name="$1" want="$2" repo rc=0 f
   shift 2

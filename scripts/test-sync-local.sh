@@ -38,8 +38,6 @@ failed_names=()
 work="$(mktemp -d "${TMPDIR:-/tmp}/sync-local-tests.XXXXXX")"
 trap 'rm -rf "$work"' EXIT
 
-# --- assertions ---------------------------------------------------------------
-
 ok() {
   pass=$((pass + 1))
   printf '  ok   %s\n' "$1"
@@ -78,8 +76,6 @@ run_ps() {
 # Normalize the sandbox HOME out of the output so the two twins are comparable.
 normalize() { sed "s|$1|<HOME>|g" "$2"; }
 
-# assert_twins <name> <expected-exit> <sh-args...> -- <ps-args...>
-# Asserts both twins exit with <expected-exit> and produce identical stdout.
 assert_twins() {
   local name="$1" want="$2"
   shift 2
@@ -130,28 +126,24 @@ assert_twins() {
   fi
 }
 
-# assert_contains <name> <file> <needle>
 assert_contains() {
   if grep -qF -- "$3" "$2"; then ok "$1"; else
     not_ok "$1" "expected to find: $3" "got: $(head -3 "$2")"
   fi
 }
 
-# assert_absent <name> <file> <needle>
 assert_absent() {
   if grep -qF -- "$3" "$2"; then
     not_ok "$1" "should NOT contain: $3" "got: $(head -5 "$2")"
   else ok "$1"; fi
 }
 
-# --- fixtures -----------------------------------------------------------------
-
-mkplugin() { # mkplugin <dir> <name>
+mkplugin() {
   mkdir -p "$1/.cursor-plugin"
   printf '{ "name": "%s" }\n' "$2" >"$1/.cursor-plugin/plugin.json"
 }
 
-mkmarket() { # mkmarket <dir> <json-body-for-plugins-array> [pluginRoot]
+mkmarket() {
   mkdir -p "$1/.cursor-plugin"
   printf '{ "name": "fx", "metadata": { "pluginRoot": "%s" }, "plugins": [%s] }\n' \
     "${3:-plugins}" "$2" >"$1/.cursor-plugin/marketplace.json"
@@ -204,8 +196,6 @@ for n in ai ai-briefing docs docs-hygiene; do mkplugin "$f_sort/plugins/$n" "$n"
 f_single="$work/f_single"
 mkplugin "$f_single" solo
 
-# --- cases --------------------------------------------------------------------
-
 printf 'sync-local regression suite\n'
 printf 'bash: %s\n' "$(bash --version | head -1)"
 if [[ "$have_pwsh" -eq 1 ]]; then
@@ -233,8 +223,6 @@ assert_twins source-escape 0 --dry-run "$f_badsrc" -- -Source "$f_badsrc" -DryRu
 printf 'enumeration\n'
 assert_twins symlinked-plugin 0 --dry-run "$f_link" -- -Source "$f_link" -DryRun
 assert_twins prefix-sort-order 0 --dry-run "$f_sort" -- -Source "$f_sort" -DryRun
-
-# --- content assertions -------------------------------------------------------
 
 printf 'output content\n'
 h="$work/h.content"
@@ -277,12 +265,8 @@ if [[ "$rc" -eq 2 ]]; then ok "--ref with no value exits 2"; else
 fi
 assert_contains "--ref with no value explains itself" "$work/c.ref.err" 'Missing value for --ref'
 
-# --- implicit source (no path / URL given) ------------------------------------
-
 printf 'implicit source\n'
 assert_twins implicit-default 0 --dry-run -- -DryRun
-
-# --- local git update ---------------------------------------------------------
 
 # These cases mutate the source, so each twin gets its own clone of the same
 # origin. assert_twins cannot share one behind-checkout: the first twin would
@@ -317,13 +301,11 @@ git_ident -C "$seed" commit -m new >/dev/null 2>&1
 git_ident -C "$seed" push origin main >/dev/null 2>&1
 
 clone_from_old() {
-  # Clone the origin, then reset to the first commit so we are one behind.
   git -c maintenance.auto=false -c gc.auto=0 clone --quiet "$g/origin.git" "$1"
   quiet_test_git "$1"
   git -C "$1" reset --hard HEAD~1 >/dev/null
 }
 
-# Fast-forward + copy the new marker
 clone_from_old "$work/behind.sh"
 clone_from_old "$work/behind.ps"
 h1="$work/h.git-ff.sh"
@@ -462,7 +444,6 @@ else
   printf '  skip %s (pwsh not installed)\n' "git-ff-submodule"
 fi
 
-# Dirty checkout: do not pull, copy the old marker
 clone_from_old "$work/dirty.sh"
 clone_from_old "$work/dirty.ps"
 printf 'wip\n' >"$work/dirty.sh/WIP"
@@ -478,7 +459,6 @@ else
   not_ok "dirty checkout is not fast-forwarded" "marker=$(cat "$h/.cursor/plugins/local/solo/MARKER" 2>/dev/null)"
 fi
 
-# --no-update: stay behind
 clone_from_old "$work/noup.sh"
 h="$work/h.git-noup"
 mkdir -p "$h"
@@ -491,7 +471,6 @@ else
   not_ok "--no-update copies the current (stale) tree" "marker=$(cat "$h/.cursor/plugins/local/solo/MARKER" 2>/dev/null)"
 fi
 
-# Dry-run of a behind checkout must not mutate it
 clone_from_old "$work/drybehind"
 old_head="$(git -C "$work/drybehind" rev-parse HEAD)"
 h="$work/h.git-dry"
@@ -505,8 +484,6 @@ else
 fi
 assert_absent "dry-run of a git source prints no update line" "$work/o.git-dry" "Fast-forwarded"
 assert_absent "dry-run of a git source does not claim up to date" "$work/o.git-dry" "already up to date"
-
-# --- real (non-dry) sync: the destination must be a real directory ------------
 
 printf 'real sync\n'
 h="$work/h.real"
@@ -534,8 +511,6 @@ if [[ "$have_pwsh" -eq 1 ]]; then
     not_ok "pwsh: a symlinked plugin installs as a real directory" "destination missing"
   fi
 fi
-
-# --- summary ------------------------------------------------------------------
 
 printf '\n%s\n' "----------------------------------------"
 printf 'passed %d, failed %d, skipped %d\n' "$pass" "$fail" "$skip"
