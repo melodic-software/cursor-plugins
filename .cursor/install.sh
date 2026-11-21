@@ -24,7 +24,6 @@ repo_root="$(cd "$_install_dir/.." && pwd)"
 unset _install_dir
 cd "$repo_root"
 
-# --- shellcheck + PowerShell (one apt-get update) -----------------------------
 # Adding Microsoft's apt source requires a subsequent `apt-get update`, so when
 # both tools are missing the previous script updated twice. Register the extra
 # source first (if pwsh is absent), then update once, then install each missing
@@ -82,7 +81,6 @@ if command -v pwsh >/dev/null 2>&1; then
   fi
 fi
 
-# --- node deps for the manifest schema validator ------------------------------
 # scripts/validate-manifests.mjs imports ajv + ajv-formats. Node resolves those
 # from ./node_modules (which .gitignore already excludes). Install via a temp
 # prefix and move only node_modules across, so no package.json / package-lock
